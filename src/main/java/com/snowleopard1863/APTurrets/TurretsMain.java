@@ -70,7 +70,7 @@ public final class TurretsMain extends JavaPlugin implements Listener {
     public void onEnable() {
         //Basic Setup
         final Plugin p = this;
-        logger.info(pdfile.getName() + " v" + pdfile.getVersion() + " has been enbaled.");
+        logger.info(pdfile.getName() + " v" + pdfile.getVersion() + " has been enabled.");
         getServer().getPluginManager().registerEvents(this, this);
         //
         // Sets Default Config Values if None Exist
@@ -253,7 +253,7 @@ public final class TurretsMain extends JavaPlugin implements Listener {
                                 ChatColor.GOLD + "Velocity: " + ChatColor.GRAY + arrowVelocity + "\n" +
                                 ChatColor.GOLD + "Fire Chance: " + ChatColor.GRAY + incindiaryChance * 100 + "%\n" +
                                 ChatColor.GOLD + "Knockback: " + ChatColor.GRAY + knockbackStrength + "\n" +
-                                ChatColor.GOLD + "Cost to Place: $" + ChatColor.GRAY + costToPlace
+                                ChatColor.GOLD + "Cost to Place: " + ChatColor.GRAY + "$" + costToPlace
                         );
                     else
                         sendMessage(event.getPlayer(), "\n" +
@@ -283,7 +283,7 @@ public final class TurretsMain extends JavaPlugin implements Listener {
     }
 
 
-    
+
     @EventHandler
     public void eventSignChanged(SignChangeEvent event) {
         //get player who placed the sign
@@ -293,22 +293,24 @@ public final class TurretsMain extends JavaPlugin implements Listener {
         RegionManager rm = WGBukkit.getRegionManager(player.getWorld());
         //check if the sign matches the cases for a turret
         if ("Mounted".equalsIgnoreCase(event.getLine(0)) && "Gun".equalsIgnoreCase(event.getLine(1))) {
-        	if (rm.getApplicableRegions(location).size() <= 0) {
-        		   sendMessage(player,"You must be inside a airspace or region.");
-                   event.setCancelled(true);
-                   if (Debug) {
-                       logger.info("A Mounted Gun sign failed to place");
-                   }
-                   return;
+            if (rm.getApplicableRegions(location).size() <= 0) {
+                if(!player.hasPermission("ap-turrets.regionoverride")) {
+                    sendMessage(player, "You must be inside a airspace or region.");
+                    event.setCancelled(true);
 
-        	}
+                    if (Debug) {
+                        logger.info("A Mounted Gun sign failed to place");
+                    }
+                    return;
+                }
+            }
             //check if player has permission to place a turret, than check if they have enough money to place the sign
             if (player.hasPermission("ap-turrets.place")) {
                 if (economy != null) {
                     if (economy.has(player, costToPlace)) {
                         //if true charge player a configurable amount and send a message
                         economy.withdrawPlayer(player, 15000);
-                        sendMessage(player, "Turret Created!");
+                        player.sendMessage(ChatColor.AQUA + "[" + ChatColor.RED + "Mounted Gun" + ChatColor.AQUA + "] " + ChatColor.GOLD + "Mounted Gun Placed!" + ChatColor.GREEN + " $15,000 has been charged to your balance.");
                         event.setLine(0, "Mounted");
                         event.setLine(1, "Gun");
                         if (Debug) {
@@ -319,7 +321,7 @@ public final class TurretsMain extends JavaPlugin implements Listener {
                             logger.info("A Mounted Gun sign failed to place");
                         }
                         //if false, clear the sign and return a permision error
-                       
+
                         sendMessage(player, "You Don't Have Enough Money To Place A Turret. Cost To Place: " + ChatColor.RED + costToPlace);
                     }
                 } else {
@@ -456,7 +458,7 @@ public final class TurretsMain extends JavaPlugin implements Listener {
             }
         }
     }
-    
+
     @EventHandler
     public void onEntityDamageByEntityEvent(EntityDamageByEntityEvent event) {
         if (event.getDamager() instanceof Arrow) {
@@ -531,7 +533,7 @@ public final class TurretsMain extends JavaPlugin implements Listener {
     }
 
     public void sendMessage(Player p, String message) {
-        p.sendMessage(ChatColor.GRAY + "[" + ChatColor.DARK_RED + "APTurrets" + ChatColor.GRAY + "] " + ChatColor.WHITE + message);
+        p.sendMessage(ChatColor.AQUA + "[" + ChatColor.RED + "Mounted Gun" + ChatColor.AQUA + "] " + ChatColor.GOLD + message);
     }
 
     @EventHandler
@@ -683,4 +685,3 @@ public final class TurretsMain extends JavaPlugin implements Listener {
         return null;
     }
 }
-
