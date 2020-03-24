@@ -364,7 +364,8 @@ public final class TurretsMain extends JavaPlugin implements Listener {
                 // Otherwise, fire the gun and launch the arrow of death at their target
                 Arrow arrow = this.launchArrow(player);
                 arrow.setShooter(player);
-                arrow.setVelocity(player.getLocation().getDirection().multiply(this.arrowVelocity));
+                Location offsetLocation = player.getLocation().add(player.getLocation().getDirection().multiply(4)); // Just in front of the player
+                arrow.setVelocity(offsetLocation.getDirection().multiply(this.arrowVelocity));
                 arrow.setBounce(false);
                 arrow.setMetadata("isTurretBullet", new FixedMetadataValue(this, true));
                 arrow.setKnockbackStrength(this.knockbackStrength);
@@ -501,7 +502,7 @@ public final class TurretsMain extends JavaPlugin implements Listener {
             if (this.onTurrets.contains(player)) {
                 // If the player tries to mount an already mounted turret, tell them no
                 if(onTurrets.contains(player)){
-                    this.sendMessage(player, "You are already on this turret!");
+                    // this.sendMessage(player, "You are already on this turret!"); // We aren't using a message here, but if you want to, this is the one I made up for it
                 }
                 else {
                     this.sendMessage(player, "You May Only Have One Person Mounted Per Turret.");
