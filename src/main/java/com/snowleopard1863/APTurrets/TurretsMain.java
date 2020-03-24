@@ -1,13 +1,26 @@
+// Original Code by snowleopard1863
+// Most recent updates by Foxtrot2400, TylerS1066 and cccm5
+// AP Turrets Plugin, AKA mounted guns
+
 package com.snowleopard1863.APTurrets;
 
-
+// Imports
 import com.sk89q.worldguard.bukkit.WGBukkit;
 import com.sk89q.worldguard.protection.managers.RegionManager;
+import java.util.*;
+import java.util.logging.Logger;
 import net.countercraft.movecraft.craft.Craft;
 import net.countercraft.movecraft.craft.CraftManager;
 import net.countercraft.movecraft.utils.MovecraftLocation;
 import net.milkbowl.vault.economy.Economy;
-import org.bukkit.*;
+import org.bukkit.Bukkit;
+import org.bukkit.ChatColor;
+import org.bukkit.Effect;
+import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.Particle;
+import org.bukkit.Sound;
+import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.Sign;
@@ -24,10 +37,7 @@ import org.bukkit.event.entity.EntityDamageByEntityEvent;
 import org.bukkit.event.entity.EntityDamageEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.entity.ProjectileHitEvent;
-import org.bukkit.event.player.PlayerInteractEntityEvent;
-import org.bukkit.event.player.PlayerInteractEvent;
-import org.bukkit.event.player.PlayerQuitEvent;
-import org.bukkit.event.player.PlayerToggleSneakEvent;
+import org.bukkit.event.player.*;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
@@ -39,361 +49,363 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
-import java.lang.reflect.InvocationTargetException;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.List;
-import java.util.logging.Logger;
-
 public final class TurretsMain extends JavaPlugin implements Listener {
-    private PluginDescriptionFile pdfile = getDescription();
+    private PluginDescriptionFile pdfile = this.getDescription();
     private Logger logger = Logger.getLogger("Minecraft");
-    private List<Player> onTurrets = new ArrayList<>();
-    private List<Player> reloading = new ArrayList<>();
-    private List<Arrow> tracedArrows = new ArrayList<>();
+    private List<Player> onTurrets = new ArrayList();
+    private List<Player> reloading = new ArrayList();
+    private List<Arrow> tracedArrows = new ArrayList();
+    private HashMap<String, Location> loc = new HashMap<String, Location>();
     private Boolean Debug = false;
-    private FileConfiguration config = getConfig();
-    private boolean takeFromInventory, takeFromChest, requireAmmo;
-    private double costToPlace, damage, incindiaryChance, arrowVelocity;
-    private int knockbackStrength;
-    private boolean useParticleTracers;
-    private double delayBetweenShots;
+    private FileConfiguration config = this.getConfig();
+    private boolean takeFromInventory; // Whether to take arrows from a player's inventory
+    private boolean takeFromChest;     // Same as above, except for chests
+    private boolean requireAmmo;       // Whether to require ammo at all
+    private double costToPlace;        // Cost to place a turret
+    private double damage;             // How much damage this should deal
+    private double incindiaryChance;   // Chance to incinerate your enemies
+    private double arrowVelocity;      // Velocity for arrows to go
+    private int knockbackStrength;     // Knockback strength of the arrows
+    private boolean useParticleTracers;// Whether to use tracers
+    private double delayBetweenShots;  // Delay between each shot
     private static Economy economy;
     private static CraftManager craftManager;
-    private String serverVersion;
-    private static final Material[] INVENTORY_MATERIALS = new Material[]{Material.CHEST, Material.TRAPPED_CHEST, Material.FURNACE, Material.HOPPER, Material.DROPPER, Material.DISPENSER, Material.BREWING_STAND};
-    private final ItemStack TURRETAMMO = new ItemStack(Material.ARROW, 1);
 
-    @Override
+    private String serverVersion;
+    private static final Material[] INVENTORY_MATERIALS;
+    private final ItemStack TURRETAMMO;
+
+    public TurretsMain() {
+        this.TURRETAMMO = new ItemStack(Material.ARROW, 1);
+    }
+
     public void onEnable() {
-        //Basic Setup
         String packageName = getServer().getClass().getPackage().getName();
         serverVersion = packageName.substring(packageName.lastIndexOf(".") + 1);
-        final Plugin p = this;
-        logger.info(pdfile.getName() + " v" + pdfile.getVersion() + " has been enbaled.");
-        getServer().getPluginManager().registerEvents(this, this);
-        //
-        // Sets Default Config Values if None Exist
-        //
-        config.addDefault("Debug mode", false);
-        config.addDefault("Cost to Place", 15000.00);
-        config.addDefault("Take arrows from inventory", true);
-        config.addDefault("Take arrows from chest", true);
-        config.addDefault("Require Ammo", true);
-        config.addDefault("Damage per arrow", 2.5);
-        config.addDefault("Incindiary chance", 0.10);
-        config.addDefault("Knockback strength", 2);
-        config.addDefault("Arrow velocity", 4.0);
-        config.addDefault("Particle tracers", true);
-        config.addDefault("Delay between shots", 0.2);
-        config.options().copyDefaults(true);
+        // Runs when the plugin starts
+        this.logger.info(this.pdfile.getName() + " v" + this.pdfile.getVersion() + " has been enabled.");
+        this.getServer().getPluginManager().registerEvents(this, this);
+        // Set up our configuration file
+        this.config.addDefault("Debug mode", false);
+        this.config.addDefault("Cost to Place", 15000.0D);
+        this.config.addDefault("Take arrows from inventory", true);
+        this.config.addDefault("Take arrows from chest", true);
+        this.config.addDefault("Require Ammo", true);
+        this.config.addDefault("Damage per arrow", 2.5D);
+        this.config.addDefault("Incindiary chance", 0.1D);
+        this.config.addDefault("Knockback strength", 2);
+        this.config.addDefault("Arrow velocity", 4.0D);
+        this.config.addDefault("Particle tracers", true);
+        this.config.addDefault("Delay between shots", 0.2D);
+        this.config.options().copyDefaults(true);
         this.saveConfig();
-        //
-        // Loads Config Values If They Exist
-        //
-        Debug = getConfig().getBoolean("Debug mode");
-        takeFromChest = getConfig().getBoolean("Take arrows from chest");
-        takeFromInventory = getConfig().getBoolean("Take arrows from inventory");
-        costToPlace = getConfig().getDouble("Cost to Place");
-        requireAmmo = getConfig().getBoolean("Require Ammo");
-        knockbackStrength = getConfig().getInt("Knockback strength");
-        incindiaryChance = getConfig().getDouble("Incindiary chance");
-        damage = getConfig().getDouble("Damage per arrow");
-        arrowVelocity = getConfig().getDouble("Arrow velocity");
-        useParticleTracers = getConfig().getBoolean("Particle tracers");
-        delayBetweenShots = getConfig().getDouble("Delay between shots");
-        //
-        // Vault Support
-        //
-        if (getServer().getPluginManager().getPlugin("Vault") != null) {
-            RegisteredServiceProvider<Economy> rsp = getServer().getServicesManager().getRegistration(Economy.class);
+        // Pull all of our configs from the configuration file
+        this.Debug = this.getConfig().getBoolean("Debug mode");
+        this.takeFromChest = this.getConfig().getBoolean("Take arrows from chest");
+        this.takeFromInventory = this.getConfig().getBoolean("Take arrows from inventory");
+        this.costToPlace = this.getConfig().getDouble("Cost to Place");
+        this.requireAmmo = this.getConfig().getBoolean("Require Ammo");
+        this.knockbackStrength = this.getConfig().getInt("Knockback strength");
+        this.incindiaryChance = this.getConfig().getDouble("Incindiary chance");
+        this.damage = this.getConfig().getDouble("Damage per arrow");
+        this.arrowVelocity = this.getConfig().getDouble("Arrow velocity");
+        this.useParticleTracers = this.getConfig().getBoolean("Particle tracers");
+        this.delayBetweenShots = this.getConfig().getDouble("Delay between shots");
+        // If we find vault, use it. Otherwise, no vault integration.
+        if (this.getServer().getPluginManager().getPlugin("Vault") != null) {
+            RegisteredServiceProvider<Economy> rsp = this.getServer().getServicesManager().getRegistration(Economy.class);
             if (rsp != null) {
-                economy = rsp.getProvider();
-                logger.info("Found a compatible Vault plugin.");
+                economy = (Economy)rsp.getProvider();
+                this.logger.info("Found a compatible Vault plugin.");
             } else {
-                logger.info("[WARNING] Could not find compatible Vault plugin. Disabling Vault integration.");
+                this.logger.info("[WARNING] Could not find compatible Vault plugin. Disabling Vault integration.");
                 economy = null;
             }
         } else {
-            logger.info("Could not find compatible Vault plugin. Disabling Vault integration.");
+            this.logger.info("Could not find compatible Vault plugin. Disabling Vault integration.");
             economy = null;
         }
 
-        //
-        // Movecraft Support
-        //
-        if (getServer().getPluginManager().getPlugin("Movecraft") != null) {
+        // Same deal with Movecraft. If we can find it, use it.
+        if (this.getServer().getPluginManager().getPlugin("Movecraft") != null) {
             craftManager = CraftManager.getInstance();
-            logger.info("Compatible Version Of Movecraft Found.");
+            this.logger.info("Compatible Version Of Movecraft Found.");
         } else {
-            logger.info("[WARNING] Could not find compatible Movecraft Version... Disabling");
+            this.logger.info("[WARNING] Could not find compatible Movecraft Version... Disabling");
             craftManager = null;
         }
-
-
-        if (useParticleTracers) {
-            getServer().getScheduler().scheduleSyncRepeatingTask(this, new Runnable() {
+        // If we want to use tracers, this sets it up for us
+        if (this.useParticleTracers) {
+            this.getServer().getScheduler().scheduleSyncRepeatingTask(this, new Runnable() {
                 public void run() {
-                    for (Iterator<Arrow> iterator = tracedArrows.iterator(); iterator.hasNext(); ) {
-                        Arrow a = iterator.next();
+                    Iterator iterator = TurretsMain.this.tracedArrows.iterator();
+
+                    while(iterator.hasNext()) {
+                        Arrow a = (Arrow)iterator.next();
                         if (a.isOnGround() || a.isDead() || a.getTicksLived() > 100) {
-                            a.removeMetadata("tracer", p);
+                            a.removeMetadata("tracer", TurretsMain.this);
                             iterator.remove();
                             a.remove();
                         }
+
                         World world = a.getWorld();
-                        world.spawnParticle(Particle.CRIT, a.getLocation(), 3, 0.0, 0.0, 0.0, 0);
+                        world.spawnParticle(Particle.CRIT, a.getLocation(), 1, 0.0D, 0.0D, 0.0D, 0.0D);
+
                     }
+
                 }
-            }, 0, 0);
+            }, 0L, 0L);
         }
 
     }
 
-    @Override
     public void onLoad() {
         super.onLoad();
-        logger = getLogger();
+        this.logger = this.getLogger();
     }
 
-    @Override
     public void onDisable() {
-        for (Player player : onTurrets) {
-            demount(player, player.getLocation());
-            onTurrets.remove(player);
-        }
-        reloading.clear();
-        tracedArrows.clear();
-        logger.info(pdfile.getName() + " v" + pdfile.getVersion() + " has been disabled.");
-    }
+        // Runs whenever the plugin is disabled
+        Iterator var1 = this.onTurrets.iterator();
 
+        while(var1.hasNext()) { // This loops through and kicks all players off their turrets so they aren't just...stuck
+            Player player = (Player)var1.next();
+            this.demount(player, player.getLocation());
+            this.onTurrets.remove(player);
+        }
+
+        this.reloading.clear();
+        this.tracedArrows.clear();
+        this.logger.info(this.pdfile.getName() + " v" + this.pdfile.getVersion() + " has been disabled.");
+    }
 
     @EventHandler
     public void onClick(PlayerInteractEvent event) {
+        // Runs whenever the player clicks
         if (event.getAction() == Action.RIGHT_CLICK_AIR || event.getAction() == Action.RIGHT_CLICK_BLOCK) {
-            if (Debug) {
-                logger.info(event.getPlayer() + " has right clicked");
+            if (this.Debug) {
+                this.logger.info(event.getPlayer() + " has right clicked");
             }
+
             Player player = event.getPlayer();
-            if (onTurrets.contains(player) && player.hasPermission("ap-turrets.use")) {
-                if (Debug) {
-                    logger.info(event.getPlayer() + " is on a turret");
+            if (this.onTurrets.contains(player) && player.hasPermission("ap-turrets.use")) {  // If the player is allowed,
+                if (this.Debug) {
+                    this.logger.info(event.getPlayer() + " is on a turret");
                 }
-                //Prevents Players From Drinking Milk Buckets to Clear Potion Effects
+
                 if (player.getInventory().getItemInMainHand().getType() == Material.MILK_BUCKET || player.getInventory().getItemInOffHand().getType() == Material.MILK_BUCKET) {
-                    if (Debug) {
-                        logger.info(event.getPlayer() + " has right clicked a milk bucket!");
+                    if (this.Debug) {
+                        this.logger.info(event.getPlayer() + " has right clicked a milk bucket!");
                     }
+                    // If the player tries to use milk to clear the effects, cancel the event to keep that from happening
                     event.setCancelled(true);
                 }
-                //Fires Turret If Player Is Not Reloading.
-                if ((player.getInventory().getItemInMainHand().getType() == Material.STONE_BUTTON
-                        || player.getInventory().getItemInOffHand().getType() == Material.STONE_BUTTON)) {
 
-                    if (reloading.contains(player))
+                if (player.getInventory().getItemInMainHand().getType() == Material.STONE_BUTTON || player.getInventory().getItemInOffHand().getType() == Material.STONE_BUTTON) {
+                    if (this.reloading.contains(player)) {
                         return;
-
-                    fireTurret(player);
+                    }
+                    // Fires the turret and keeps them from interacting with something else and placing the button accidentally
+                    this.fireTurret(player);
                     event.setCancelled(true);
-                    if (Debug) {
-                        logger.info(event.getPlayer() + " has started to shoot");
+                    if (this.Debug) {
+                        this.logger.info(event.getPlayer() + " has started to shoot");
                     }
                 }
             }
         }
 
+        Sign sign;
         if (event.getAction() == Action.RIGHT_CLICK_BLOCK) {
-            if (Debug) {
-                logger.info("A block has been right clicked");
+            if (this.Debug) {
+                this.logger.info("A block has been right clicked");
             }
-            if (event.getClickedBlock().getType() == Material.SIGN_POST
-                    || event.getClickedBlock().getType() == Material.WALL_SIGN
-                    || event.getClickedBlock().getType() == Material.SIGN) {
-                if (Debug) {
-                    logger.info("A sign was clicked");
+
+            if (event.getClickedBlock().getType() == Material.SIGN_POST || event.getClickedBlock().getType() == Material.WALL_SIGN || event.getClickedBlock().getType() == Material.SIGN) {
+
+                if (this.Debug) {
+                    this.logger.info("A sign was clicked");
                 }
-                Sign sign = (Sign) event.getClickedBlock().getState();
+
+                sign = (Sign)event.getClickedBlock().getState();
                 if ("Mounted".equalsIgnoreCase(sign.getLine(0)) && "Gun".equalsIgnoreCase(sign.getLine(1))) {
-                    if (Debug) {
-                        logger.info("A Mounted Gun sign has been clicked");
+                    // If the player clicks a sign post, and that sign post says "Mounted Gun" on it, mount them to the turret
+                    if (this.Debug) {
+                        this.logger.info("A Mounted Gun sign has been clicked");
                     }
-                    Block b = sign.getLocation().subtract(0,1,0).getBlock();
-                    if (b.getType() != Material.SLIME_BLOCK)
-                    {
+
+                    Block b = sign.getLocation().subtract(0.0D, 1.0D, 0.0D).getBlock();
+                    if (b.getType() != Material.SLIME_BLOCK) {
                         Location signPos = event.getClickedBlock().getLocation();
                         signPos.setPitch(event.getPlayer().getLocation().getPitch());
                         signPos.setDirection(event.getPlayer().getVelocity());
-                        mount(event.getPlayer(), signPos);
+                        this.mount(event.getPlayer(), signPos);
                     }
                 }
             }
         }
 
         if (event.getAction() == Action.LEFT_CLICK_BLOCK && event.getPlayer().getInventory().getItemInMainHand().getType() == Material.STONE_BUTTON) {
-            if (Debug) {
-                logger.info("A block has been left clicked while holding a button");
+            // If a player left clicks the mounted gun with a stone button in hand, show them the statistics for the plugin (Damage, Knockback, Velocity, etc.)
+            if (this.Debug) {
+                this.logger.info("A block has been left clicked while holding a button");
             }
-            if (event.getClickedBlock().getType() == Material.SIGN_POST
-                    || event.getClickedBlock().getType() == Material.WALL_SIGN
-                    || event.getClickedBlock().getType() == Material.SIGN) {
-                if (Debug) {
-                    logger.info("A sign was left clicked");
+
+            if (event.getClickedBlock().getType() == Material.SIGN_POST || event.getClickedBlock().getType() == Material.WALL_SIGN || event.getClickedBlock().getType() == Material.SIGN) {
+                if (this.Debug) {
+                    this.logger.info("A sign was left clicked");
                 }
-                Sign sign = (Sign) event.getClickedBlock().getState();
+
+                sign = (Sign)event.getClickedBlock().getState();
                 if ("Mounted".equalsIgnoreCase(sign.getLine(0)) && "Gun".equalsIgnoreCase(sign.getLine(1))) {
-                    if (Debug) {
-                        logger.info("A Mounted Gun sign has been left clicked");
+                    if (this.Debug) {
+                        this.logger.info("A Mounted Gun sign has been left clicked");
                     }
+
                     event.setCancelled(true);
-                    if (!sign.getLine(3).equals(""))
-                        sendMessage(event.getPlayer(), "\n" +
-                                ChatColor.GOLD + "Type: " + ChatColor.BLACK + sign.getLine(3) + "\n" +
-                                ChatColor.GOLD + "Damage/Shot: " + ChatColor.GRAY + damage + "\n" +
-                                ChatColor.GOLD + "Delay Between Shots: " + ChatColor.GRAY + delayBetweenShots + "\n" +
-                                ChatColor.GOLD + "Velocity: " + ChatColor.GRAY + arrowVelocity + "\n" +
-                                ChatColor.GOLD + "Fire Chance: " + ChatColor.GRAY + incindiaryChance * 100 + "%\n" +
-                                ChatColor.GOLD + "Knockback: " + ChatColor.GRAY + knockbackStrength + "\n" +
-                                ChatColor.GOLD + "Cost to Place: $" + ChatColor.GRAY + costToPlace
-                        );
-                    else
-                        sendMessage(event.getPlayer(), "\n" +
-                                ChatColor.GOLD + "Damage/Shot: " + ChatColor.GRAY + damage + "\n" +
-                                ChatColor.GOLD + "Delay Between Shots: " + ChatColor.GRAY + delayBetweenShots + "\n" +
-                                ChatColor.GOLD + "Velocity: " + ChatColor.GRAY + arrowVelocity + "\n" +
-                                ChatColor.GOLD + "Fire Chance: " + ChatColor.GRAY + incindiaryChance * 100 + "%\n" +
-                                ChatColor.GOLD + "Knockback: " + ChatColor.GRAY + knockbackStrength + "\n" +
-                                ChatColor.GOLD + "Cost to Place: $" + ChatColor.GRAY + costToPlace
-                        );
+                    if (!sign.getLine(3).equals("")) {
+                        this.sendMessage(event.getPlayer(), "\n" + ChatColor.GOLD + "Type: " + ChatColor.BLACK + sign.getLine(3) + "\n" + ChatColor.GOLD + "Damage/Shot: " + ChatColor.GRAY + this.damage + "\n" + ChatColor.GOLD + "Delay Between Shots: " + ChatColor.GRAY + this.delayBetweenShots + "\n" + ChatColor.GOLD + "Velocity: " + ChatColor.GRAY + this.arrowVelocity + "\n" + ChatColor.GOLD + "Fire Chance: " + ChatColor.GRAY + this.incindiaryChance * 100.0D + "%\n" + ChatColor.GOLD + "Knockback: " + ChatColor.GRAY + this.knockbackStrength + "\n" + ChatColor.GOLD + "Cost to Place: " + ChatColor.GRAY + "$" + this.costToPlace);
+                    } else {
+                        this.sendMessage(event.getPlayer(), "\n" + ChatColor.GOLD + "Damage/Shot: " + ChatColor.GRAY + this.damage + "\n" + ChatColor.GOLD + "Delay Between Shots: " + ChatColor.GRAY + this.delayBetweenShots + "\n" + ChatColor.GOLD + "Velocity: " + ChatColor.GRAY + this.arrowVelocity + "\n" + ChatColor.GOLD + "Fire Chance: " + ChatColor.GRAY + this.incindiaryChance * 100.0D + "%\n" + ChatColor.GOLD + "Knockback: " + ChatColor.GRAY + this.knockbackStrength + "\n" + ChatColor.GOLD + "Cost to Place: $" + ChatColor.GRAY + this.costToPlace);
+                    }
                 }
             }
         }
 
     }
 
-    //
-    // Prevents Players From Mounting Entities To De-Mount A Gun.
-    //
     @EventHandler
     public void onEntityInteract(PlayerInteractEntityEvent e) {
         Player p = e.getPlayer();
-        if (onTurrets.contains(p) && (e.getRightClicked() instanceof Boat || e.getRightClicked() instanceof Horse)) {
-            demount(p, p.getLocation());
-            if (Debug) logger.info("Player: " + p.getName() + "Has Mounted An Entity.");
+        if (this.onTurrets.contains(p) && (e.getRightClicked() instanceof Boat || e.getRightClicked() instanceof Horse)) {
+            // If someone tries to hop on a horse while already on a gun, demount them from the gun
+            this.demount(p, p.getLocation());
+            if (this.Debug) {
+                this.logger.info("Player: " + p.getName() + "Has Mounted An Entity.");
+            }
         }
+
     }
 
-
-    
     @EventHandler
     public void eventSignChanged(SignChangeEvent event) {
-        //get player who placed the sign
         Player player = event.getPlayer();
-        Plugin wg = getServer().getPluginManager().getPlugin("WorldGuard");
+        Plugin wg = this.getServer().getPluginManager().getPlugin("WorldGuard");
         Location location = player.getLocation();
         RegionManager rm = WGBukkit.getRegionManager(player.getWorld());
-        //check if the sign matches the cases for a turret
         if ("Mounted".equalsIgnoreCase(event.getLine(0)) && "Gun".equalsIgnoreCase(event.getLine(1))) {
-        	if (rm.getApplicableRegions(location).size() <= 0) {
-        		   sendMessage(player,"You must be inside a airspace or region.");
-                   event.setCancelled(true);
-                   if (Debug) {
-                       logger.info("A Mounted Gun sign failed to place");
-                   }
-                   return;
+            if (rm.getApplicableRegions(location).size() <= 0 && !player.hasPermission("ap-turrets.regionoverride")) {
+                // If the player can override regions, place the turret. Otherwise, require them to be in a region
+                this.sendMessage(player, "You must be inside a airspace or region.");
+                event.setCancelled(true);
+                if (this.Debug) {
+                    this.logger.info("A Mounted Gun sign failed to place");
+                }
 
-        	}
-            //check if player has permission to place a turret, than check if they have enough money to place the sign
+                return;
+            }
+
             if (player.hasPermission("ap-turrets.place")) {
+                // If they're allowed to place a turret, notify them that they have placed a turret and take money from their account
                 if (economy != null) {
-                    if (economy.has(player, costToPlace)) {
-                        //if true charge player a configurable amount and send a message
-                        economy.withdrawPlayer(player, 15000);
-                        sendMessage(player, "Turret Created!");
+                    if (economy.has(player, this.costToPlace)) {
+                        economy.withdrawPlayer(player, costToPlace);
+                        player.sendMessage(ChatColor.AQUA + "[" + ChatColor.RED + "Mounted Gun" + ChatColor.AQUA + "] " + ChatColor.GOLD + "Mounted Gun Placed!" + ChatColor.GREEN + " $15,000 has been charged to your balance.");
                         event.setLine(0, "Mounted");
                         event.setLine(1, "Gun");
-                        if (Debug) {
-                            logger.info("A Mounted Gun sign has been place");
+                        if (this.Debug) {
+                            this.logger.info("A Mounted Gun sign has been place");
                         }
                     } else {
-                        if (Debug) {
-                            logger.info("A Mounted Gun sign failed to place");
+                        if (this.Debug) {
+                            this.logger.info("A Mounted Gun sign failed to place");
                         }
-                        //if false, clear the sign and return a permision error
-                       
-                        sendMessage(player, "You Don't Have Enough Money To Place A Turret. Cost To Place: " + ChatColor.RED + costToPlace);
+
+                        this.sendMessage(player, "You Don't Have Enough Money To Place A Turret. Cost To Place: " + ChatColor.RED + this.costToPlace);
                     }
                 } else {
-                    sendMessage(player, "Turret Created!");
-                    if (Debug) {
-                        logger.info("A Mounted Gun sign has been placed for free due to no vault instalation");
+                    this.sendMessage(player, "Turret Created!");
+                    if (this.Debug) {
+                        this.logger.info("A Mounted Gun sign has been placed for free due to no vault instalation");
                     }
                 }
             } else {
-                if (Debug) {
-                    logger.info("A Mounted Gun sign failed to place");
+                if (this.Debug) {
+                    this.logger.info("A Mounted Gun sign failed to place");
                 }
-                //if false, clear the sign and return a permision error
+
                 event.setCancelled(true);
-                sendMessage(player, ChatColor.RED + "ERROR " + ChatColor.WHITE + "You Must Be Donor To Place Mounted Guns!");
+                this.sendMessage(player, ChatColor.RED + "ERROR " + ChatColor.WHITE + "You Must Be Donor To Place Mounted Guns!");
             }
         }
+
     }
 
-
     public void fireTurret(final Player player) {
+        // If the player starts to glide, demount them from the turret
         if (player.isGliding()) {
-            demount(player, player.getLocation());
-            return;
-        }
-        reloading.add(player);
-        Bukkit.getScheduler().scheduleSyncDelayedTask(this, new Runnable() {
-            public void run() {
-                reloading.remove(player);
-            }
-        }, (int) (delayBetweenShots * 10));
-        boolean hasAmmoBeenTaken;
-        hasAmmoBeenTaken = !requireAmmo || takeAmmo(player);
-        if (!hasAmmoBeenTaken) {
-            player.getWorld().playSound(player.getLocation(), Sound.BLOCK_DISPENSER_FAIL, 1, 2);
-            if (Debug) logger.info(player + " is out of ammo");
-            return;
-        }
-        Arrow arrow = launchArrow(player);
-        arrow.setShooter(player);
-        arrow.setVelocity(player.getLocation().getDirection().multiply(arrowVelocity));
-        arrow.setBounce(false);
-        arrow.setMetadata("isTurretBullet", new FixedMetadataValue(this, true));
-        arrow.setKnockbackStrength(knockbackStrength);
-        double rand = Math.random();
-        if (rand <= incindiaryChance) {
-            arrow.setFireTicks(500);
-        }
-        if (useParticleTracers) {
-            arrow.setMetadata("tracer", new FixedMetadataValue(this, true));
-            tracedArrows.add(arrow);
-            arrow.setCritical(false);
-            arrow.getEntityId();
-            //PacketPlayOutEntityDestroy packet = new PacketPlayOutEntityDestroy(arrow.getEntityId());
-            try {
-                Object packet = getNMSClass("PacketPlayOutEntityDestroy").getConstructor(int.class).newInstance(arrow.getEntityId());
-                for (Player p : getServer().getOnlinePlayers()) {
-                    Object nmsPlayer = p.getClass().getMethod("getHandle").invoke(p);
-                    Object pConn = nmsPlayer.getClass().getField("playerConnection").get(nmsPlayer);
-                    pConn.getClass().getMethod("sendPacket", getNMSClass("Packet")).invoke(pConn, packet);
+            this.demount(player, player.getLocation());
+        } else {
+            this.reloading.add(player);
+            Bukkit.getScheduler().scheduleSyncDelayedTask(this, new Runnable() {
+                public void run() {
+                    TurretsMain.this.reloading.remove(player);
+                }
+            }, (long)((int)(this.delayBetweenShots * 10.0D)));
+            boolean hasAmmoBeenTaken = !this.requireAmmo || this.takeAmmo(player);
+            if (!hasAmmoBeenTaken) {
+                // If they run out of ammo, don't let them fire and play the empty sound
+                player.getWorld().playSound(player.getLocation(), Sound.BLOCK_DISPENSER_FAIL, 1.0F, 2.0F);
+                if (this.Debug) {
+                    this.logger.info(player + " is out of ammo");
                 }
 
-            } catch (Throwable e) {
-                e.printStackTrace();
+            } else {
+                // Otherwise, fire the gun and launch the arrow of death at their target
+                Arrow arrow = this.launchArrow(player);
+                arrow.setShooter(player);
+                Location offsetLocation = player.getLocation().add(player.getLocation().getDirection().multiply(4)); // Just in front of the player
+                arrow.setVelocity(offsetLocation.getDirection().multiply(this.arrowVelocity));
+                arrow.setBounce(false);
+                arrow.setMetadata("isTurretBullet", new FixedMetadataValue(this, true));
+                arrow.setKnockbackStrength(this.knockbackStrength);
+                double rand = Math.random();
+                if (rand <= this.incindiaryChance) {
+                    arrow.setFireTicks(500);
+                }
+
+                if (this.useParticleTracers) {
+                    arrow.setMetadata("tracer", new FixedMetadataValue(this, true));
+                    this.tracedArrows.add(arrow);
+                    arrow.setCritical(false);
+                    //PacketPlayOutEntityDestroy packet = new PacketPlayOutEntityDestroy(new int[]{arrow.getEntityId()});
+                    Iterator var7 = this.getServer().getOnlinePlayers().iterator();
+
+                    try {
+                        Object packet = getNMSClass("PacketPlayOutEntityDestroy").getConstructor(int[].class).newInstance(new int[]{arrow.getEntityId()});
+                        while (var7.hasNext()) {
+                            Player p = (Player) var7.next();
+                            Object nmsPlayer = p.getClass().getMethod("getHandle").invoke(p);
+                            Object pConn = nmsPlayer.getClass().getField("playerConnection").get(nmsPlayer);
+                            pConn.getClass().getMethod("sendPacket", getNMSClass("Packet")).invoke(pConn, packet);
+                        }
+                    } catch (Exception e) {
+                        e.printStackTrace();
+                    }
+                } else {
+                    arrow.setCritical(true);
+                }
+
+                World world = player.getWorld();
+                world.playSound(player.getLocation(), Sound.ENTITY_FIREWORK_BLAST, 1.0F, 2.0F);
+                world.playEffect(player.getLocation(), Effect.MOBSPAWNER_FLAMES, 0);
+
+                if (this.Debug) {
+                    this.logger.info("Mounted Gun Fired.");
+                }
+
             }
-
-        } else {
-            arrow.setCritical(true);
         }
-        World world = player.getWorld();
-        world.playSound(player.getLocation(), Sound.ENTITY_FIREWORK_BLAST, 1, 2);
-        world.playEffect(player.getLocation(), Effect.MOBSPAWNER_FLAMES, 0);
-
-        if (Debug) logger.info("Mounted Gun Fired.");
     }
 
     private Arrow launchArrow(Player bukkitPlayer) {
@@ -411,167 +423,199 @@ public final class TurretsMain extends JavaPlugin implements Listener {
 
     @EventHandler
     public void onPlayerToggleSneakEvent(PlayerToggleSneakEvent event) {
+        // If the player sneaks, demount them from the turret
         Player player = event.getPlayer();
-        if (Debug) {
-            logger.info(player + " sneaked");
+        if (this.Debug) {
+            this.logger.info(player + " sneaked");
         }
-        if (player.isSneaking() && onTurrets.contains(player)) {
-            demount(player, player.getLocation());
-            if (Debug) {
-                logger.info(player + " got out of their turret");
+
+        if (player.isSneaking() && this.onTurrets.contains(player)) {
+            this.demount(player, player.getLocation());
+            if (this.Debug) {
+                this.logger.info(player + " got out of their turret");
             }
         }
+
     }
 
-    @SuppressWarnings("deprecation")
     @EventHandler
     public void onHit(ProjectileHitEvent event) {
+        // If a bullet hits, play a sound for it and add effects
         if (event.getEntity() instanceof Arrow) {
-            Arrow arrow = (Arrow) event.getEntity();
+            Arrow arrow = (Arrow)event.getEntity();
             if (arrow.hasMetadata("isTurretBullet")) {
-                if (Debug) {
-                    logger.info("A bullet has landed");
+                if (this.Debug) {
+                    this.logger.info("A bullet has landed");
                 }
 
                 Location arrowLoc = arrow.getLocation();
                 World world = event.getEntity().getWorld();
                 Location l = arrowLoc.getBlock().getLocation();
                 arrow.getWorld().playEffect(l, Effect.STEP_SOUND, world.getBlockTypeIdAt(l));
-                world.playEffect(l, Effect.TILE_BREAK, l.subtract(0, 1, 0).getBlock().getTypeId(), 0);
+                world.playEffect(l, Effect.TILE_BREAK, l.subtract(0.0D, 1.0D, 0.0D).getBlock().getTypeId(), 0);
             }
         }
+
     }
 
     @EventHandler
     public void onEntityDamageEvent(EntityDamageEvent event) {
-        if (Debug) {
-            logger.info("An entity was damaged");
+        // If a player gets hit while on a turret, demount them from the turret. If it's a player, stop them from gliding and/or sprinting
+        if (this.Debug) {
+            this.logger.info("An entity was damaged");
         }
 
         if (event.getEntity() instanceof Player) {
-            if (Debug) {
-                logger.info("It was a player");
-            }
-            Player player = (Player) event.getEntity();
-            if (onTurrets.contains(player)) {
-                if (Debug) {
-                    logger.info("on a turret");
-                }
-                demount(player, player.getLocation());
+            if (this.Debug) {
+                this.logger.info("It was a player");
             }
 
-            if (event.getEntity().hasMetadata("isTurretBullet")) {
-                if (player.isGliding()) {
-                    player.setGliding(false);
-                    player.setSprinting(false);
+            Player player = (Player)event.getEntity();
+            if (this.onTurrets.contains(player)) {
+                if (this.Debug) {
+                    this.logger.info("on a turret");
                 }
+
+                this.demount(player, player.getLocation());
+            }
+
+            if (event.getEntity().hasMetadata("isTurretBullet") && player.isGliding()) {
+                player.setGliding(false);
+                player.setSprinting(false);
             }
         }
+
     }
-    
+
     @EventHandler
     public void onEntityDamageByEntityEvent(EntityDamageByEntityEvent event) {
-        if (event.getDamager() instanceof Arrow) {
-            //if (event.getDamager().getCustomName() == "Bullet") {
-            if (event.getDamager().hasMetadata("isTurretBullet")) {
-                event.setDamage(damage);
-                if (Debug) {
-                    Arrow a = (Arrow) event.getDamager();
-                    Player shooter = (Player) a.getShooter();
-                    logger.info(event.getEntity() + " was shot by " + shooter.getName() + " for " + event.getDamage() + " It should be doing " + damage);
-                }
+        // If the bullet hits something, make the event do the right amount of damage
+        if (event.getDamager() instanceof Arrow && event.getDamager().hasMetadata("isTurretBullet")) {
+            event.setDamage(this.damage);
+            if (this.Debug) {
+                Arrow a = (Arrow)event.getDamager();
+                Player shooter = (Player)a.getShooter();
+                this.logger.info(event.getEntity() + " was shot by " + shooter.getName() + " for " + event.getDamage() + " It should be doing " + this.damage);
             }
         }
+
     }
 
     public void mount(Player player, Location signPos) {
-        if (signPos.getBlock().getType() == Material.SIGN || signPos.getBlock().getType() == Material.SIGN_POST
-                || signPos.getBlock().getType() == Material.WALL_SIGN) {
-            if (Debug) {
-                logger.info("Sign detected");
+        if (signPos.getBlock().getType() != Material.SIGN && signPos.getBlock().getType() != Material.SIGN_POST && signPos.getBlock().getType() != Material.WALL_SIGN) {
+            this.logger.warning("Sign not found!");
+        } else {
+            if (this.Debug) {
+                this.logger.info("Sign detected");
             }
-            Sign sign = (Sign) signPos.getBlock().getState();
-            if (onTurrets.contains(player)) {
-                sendMessage(player, "You May Only Have One Person Mounted Per Turret.");
-                if (Debug) {
-                    logger.info("1 player per turret");
+
+            Sign sign = (Sign)signPos.getBlock().getState();
+            if (this.onTurrets.contains(player)) {
+                // If the player tries to mount an already mounted turret, tell them no
+                if(onTurrets.contains(player)){
+                    // this.sendMessage(player, "You are already on this turret!"); // We aren't using a message here, but if you want to, this is the one I made up for it
+                }
+                else {
+                    this.sendMessage(player, "You May Only Have One Person Mounted Per Turret.");
+                }
+                if (this.Debug) {
+                    this.logger.info("1 player per turret");
                 }
             } else {
-                if (Debug) {
-                    logger.info(player.getName() + " is now on a turret");
+                if (this.Debug) {
+                    this.logger.info(player.getName() + " is now on a turret");
                 }
+
                 sign.setLine(2, player.getName());
                 sign.update();
-                onTurrets.add(player);
-                signPos.add(0.5, 0, 0.5);
+                this.onTurrets.add(player);
+                signPos.add(0.5D, 0.0D, 0.5D);
                 signPos.setDirection(player.getEyeLocation().getDirection());
                 player.teleport(signPos);
-                player.setWalkSpeed(0);
-                //player.addPotionEffect(new PotionEffect(PotionEffectType.SLOW, 1000000, 6));
+                // Effects to add zoom and lock a player from jumping
+                player.addPotionEffect(new PotionEffect(PotionEffectType.SLOW, 1000000, 6));
+                //player.setWalkSpeed(0.0F); //Previously this was used. If you use it, you don't have to use the onPlayerMove event, but it breaks the zoom effect that slowness gives you.
                 player.addPotionEffect(new PotionEffect(PotionEffectType.JUMP, 1000000, 200));
+
             }
-        } else {
-            logger.warning("Sign not found!");
+        }
+
+    }
+
+    @EventHandler
+    public void onPlayerMove(PlayerMoveEvent e){
+        // Whenever the player moves, stop them from doing so.
+        Player player = e.getPlayer();
+        if (this.onTurrets.contains(player)){
+            Location locationPre = e.getFrom();
+            Location locationCur = e.getTo();
+            if ((locationCur.getBlockX() != locationPre.getBlockX()) || locationCur.getBlockY() != locationPre.getBlockY() || locationCur.getBlockZ() != locationPre.getBlockZ()){
+                e.setCancelled(true); // This can reportedly be buggy. I didn't notice any during testing time, but if you do, this is the alternative:
+                // player.teleport(locationPre);
+                // This will probably cause problems if a player tries to move on a cruising craft however, while cancelling the event will guarantee the player will stick to the craft
+
+            }
         }
     }
 
     public void demount(Player player, Location signPos) {
-        if (Debug) {
-            logger.info(player.getName() + " is being taken off a turret");
+        // Demounting the player from the turret
+        if (this.Debug) {
+            this.logger.info(player.getName() + " is being taken off a turret");
         }
-        onTurrets.remove(player);
-        reloading.remove(player);
-        if (signPos.getBlock().getType() == Material.SIGN || signPos.getBlock().getType() == Material.SIGN_POST
-                || signPos.getBlock().getType() == Material.WALL_SIGN) {
-            if (Debug) {
-                logger.info("sign found and updated");
+
+        this.onTurrets.remove(player);
+        this.reloading.remove(player);
+        if (signPos.getBlock().getType() != Material.SIGN && signPos.getBlock().getType() != Material.SIGN_POST && signPos.getBlock().getType() != Material.WALL_SIGN) {
+            this.logger.warning("Sign not found!");
+        } else {
+            if (this.Debug) {
+                this.logger.info("sign found and updated");
             }
-            Sign sign = (Sign) signPos.getBlock().getState();
+
+            Sign sign = (Sign)signPos.getBlock().getState();
             sign.setLine(2, "");
             sign.update();
-        } else {
-            logger.warning("Sign not found!");
         }
-        signPos.subtract(-0.5, 0, -0.5);
-        player.setWalkSpeed(0.2f);
+
+        signPos.subtract(-0.5D, 0.0D, -0.5D);
+        player.setWalkSpeed(0.2F);
+        // Remove potion effects and set their walking speed back to normal
         player.removePotionEffect(PotionEffectType.JUMP);
+        player.removePotionEffect(PotionEffectType.SLOW);
     }
 
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent e) {
-        demount(e.getPlayer(), e.getPlayer().getLocation());
+        // If the player quits, demount them from the turret
+        this.demount(e.getPlayer(), e.getPlayer().getLocation());
     }
 
     public void sendMessage(Player p, String message) {
-        p.sendMessage(ChatColor.GRAY + "[" + ChatColor.DARK_RED + "APTurrets" + ChatColor.GRAY + "] " + ChatColor.WHITE + message);
+        // Message formatter
+        p.sendMessage(ChatColor.AQUA + "[" + ChatColor.RED + "Mounted Gun" + ChatColor.AQUA + "] " + ChatColor.GOLD + message);
     }
 
     @EventHandler
     public void onPlayerDeath(PlayerDeathEvent e) {
-        if (onTurrets.contains(e.getEntity().getKiller())) {
+        if (this.onTurrets.contains(e.getEntity().getKiller())) {
             e.setDeathMessage(e.getEntity().getDisplayName() + " was gunned down by " + e.getEntity().getKiller().getDisplayName() + ".");
         }
+
     }
 
-    /**
-     * Takes Ammo From Player's Inventory For Firing The Turret.
-     *
-     * @param player Player Who Is Having Ammo Thier Ammo Taken
-     * @return Ammo Successfully Taken
-     */
     public boolean takeAmmo(Player player) {
-        if (takeFromChest) {
+        // Take ammo from the chest, then from the player, and if both are empty return false and report empty ammo
+        if (this.takeFromChest) {
             Block signBlock = player.getLocation().getBlock();
             if (signBlock.getType() == Material.WALL_SIGN || signBlock.getType() == Material.SIGN_POST) {
-                Sign s = (Sign) signBlock.getState();
-
-                if (craftManager != null)
-                {
+                Sign s = (Sign)signBlock.getState();
+                if (craftManager != null) {
                     Craft c = craftManager.getCraftByPlayer(player);
                     if (c != null) {
-                        Inventory i = firstInventory(c, TURRETAMMO, Material.CHEST, Material.TRAPPED_CHEST);
+                        Inventory i = firstInventory(c, this.TURRETAMMO, Material.CHEST, Material.TRAPPED_CHEST);
                         if (i != null) {
-                            i.removeItem(TURRETAMMO);
+                            i.removeItem(new ItemStack[]{this.TURRETAMMO});
                             return true;
                         }
                     }
@@ -579,87 +623,73 @@ public final class TurretsMain extends JavaPlugin implements Listener {
 
                 Block adjacentBlock = getBlockSignAttachedTo(signBlock);
                 if (adjacentBlock.getState() instanceof InventoryHolder) {
-                    InventoryHolder inventoryHolder = (InventoryHolder) adjacentBlock.getState();
-                    if (inventoryHolder.getInventory().containsAtLeast(TURRETAMMO, 1)) {
-                        inventoryHolder.getInventory().removeItem(TURRETAMMO);
+                    InventoryHolder inventoryHolder = (InventoryHolder)adjacentBlock.getState();
+                    if (inventoryHolder.getInventory().containsAtLeast(this.TURRETAMMO, 1)) {
+                        inventoryHolder.getInventory().removeItem(new ItemStack[]{this.TURRETAMMO});
                         return true;
                     }
                 }
             }
         }
 
-        if (takeFromInventory) {
-            if (player.getInventory().containsAtLeast(TURRETAMMO, 1)) {
-                player.getInventory().removeItem(TURRETAMMO);
-                player.updateInventory();
-                return true;
-            }
+        if (this.takeFromInventory && player.getInventory().containsAtLeast(this.TURRETAMMO, 1)) {
+            player.getInventory().removeItem(new ItemStack[]{this.TURRETAMMO});
+            player.updateInventory();
+            return true;
+        } else {
+            return false;
         }
-        return false;
     }
 
-    /**
-     * Checks The Block That Is Being Used As A Support. Eg: Block Sign Is Placed Against
-     *
-     * @param block Block That You Are Checking For Support
-     * @return Block That Is Supporting
-     */
     public static Block getBlockSignAttachedTo(Block block) {
-        if (block.getType().equals(Material.SIGN_POST))
+        // Get the block the sign is attached to
+        if (block.getType().equals(Material.SIGN_POST)) {
             return block.getRelative(BlockFace.DOWN);
-
-        if (block.getType().equals(Material.WALL_SIGN))
-            switch (block.getData()) {
-                case 2:
-                    return block.getRelative(BlockFace.SOUTH);
-                case 3:
-                    return block.getRelative(BlockFace.NORTH);
-                case 4:
-                    return block.getRelative(BlockFace.EAST);
-                case 5:
-                    return block.getRelative(BlockFace.WEST);
+        } else {
+            if (block.getType().equals(Material.WALL_SIGN)) {
+                switch(block.getData()) {
+                    case 2:
+                        return block.getRelative(BlockFace.SOUTH);
+                    case 3:
+                        return block.getRelative(BlockFace.NORTH);
+                    case 4:
+                        return block.getRelative(BlockFace.EAST);
+                    case 5:
+                        return block.getRelative(BlockFace.WEST);
+                }
             }
-        return null;
+
+            return null;
+        }
     }
 
-    /**
-     * Converts a Movecraft Location Object to a Bukkit Location Object
-     *
-     * @param movecraftLoc Movecraft Location Object
-     * @param world        World The Craft Is In
-     * @return Location Object
-     */
     public static Location movecraftLocationToBukkitLocation(MovecraftLocation movecraftLoc, World world) {
-        return new Location(world, movecraftLoc.getX(), movecraftLoc.getY(), movecraftLoc.getZ());
+        // Location converter
+        return new Location(world, (double)movecraftLoc.getX(), (double)movecraftLoc.getY(), (double)movecraftLoc.getZ());
     }
 
-    /**
-     * Converts a list of movecraftLocation Object to a bukkit Location Object
-     *
-     * @param movecraftLocations the movecraftLocations to be converted
-     * @param world              the world of the location
-     * @return the converted location
-     */
     public static ArrayList<Location> movecraftLocationToBukkitLocation(List<MovecraftLocation> movecraftLocations, World world) {
-        ArrayList<Location> locations = new ArrayList<Location>();
-        for (MovecraftLocation movecraftLoc : movecraftLocations) {
+        ArrayList<Location> locations = new ArrayList();
+        Iterator var3 = movecraftLocations.iterator();
+
+        while(var3.hasNext()) {
+            MovecraftLocation movecraftLoc = (MovecraftLocation)var3.next();
             locations.add(movecraftLocationToBukkitLocation(movecraftLoc, world));
         }
+
         return locations;
     }
 
-    /**
-     * Converts a list of movecraftLocation Object to a bukkit Location Object
-     *
-     * @param movecraftLocations the movecraftLocations to be converted
-     * @param world              the world of the location
-     * @return the converted location
-     */
     public static ArrayList<Location> movecraftLocationToBukkitLocation(MovecraftLocation[] movecraftLocations, World world) {
-        ArrayList<Location> locations = new ArrayList<Location>();
-        for (MovecraftLocation movecraftLoc : movecraftLocations) {
+        ArrayList<Location> locations = new ArrayList();
+        MovecraftLocation[] var3 = movecraftLocations;
+        int var4 = movecraftLocations.length;
+
+        for(int var5 = 0; var5 < var4; ++var5) {
+            MovecraftLocation movecraftLoc = var3[var5];
             locations.add(movecraftLocationToBukkitLocation(movecraftLoc, world));
         }
+
         return locations;
     }
 
@@ -667,32 +697,39 @@ public final class TurretsMain extends JavaPlugin implements Listener {
         return new MovecraftLocation(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
     }
 
-    /**
-     * Gets the first inventory of a lookup material type on a craft holding a specific item, returns null if none found
-     * an input of null for item searches without checking inventory contents
-     * an input of an ItemStack with type set to Material.AIR for searches for empty space in an inventory
-     *
-     * @param craft the craft to scan
-     * @param item the item to look for during the scan
-     * @param lookup the materials to compare against while scanning
-     * @return the first inventory matching a lookup material on the craft
-     */
-    public static Inventory firstInventory(Craft craft, ItemStack item, Material... lookup){
-        if(craft == null)
+    public static Inventory firstInventory(Craft craft, ItemStack item, Material... lookup) {
+        if (craft == null) {
             throw new IllegalArgumentException("craft must not be null");
+        } else {
+            Iterator var3 = movecraftLocationToBukkitLocation(craft.getBlockList(), craft.getW()).iterator();
 
-        for(Location loc : movecraftLocationToBukkitLocation(craft.getBlockList(),craft.getW()))
-            for(Material m : lookup)
-                if(loc.getBlock().getType() == m)
-                {
-                    Inventory inv = ((InventoryHolder)loc.getBlock().getState()).getInventory();
-                    if(item==null)
-                        return inv;
-                    for(ItemStack i : inv)
-                        if((item.getType()==Material.AIR  && (i==null || i.getType()==Material.AIR)) || (i!=null && i.isSimilar(item)))
+            while(var3.hasNext()) {
+                Location loc = (Location)var3.next();
+                Material[] var5 = lookup;
+                int var6 = lookup.length;
+
+                for(int var7 = 0; var7 < var6; ++var7) {
+                    Material m = var5[var7];
+                    if (loc.getBlock().getType() == m) {
+                        Inventory inv = ((InventoryHolder)loc.getBlock().getState()).getInventory();
+                        if (item == null) {
                             return inv;
+                        }
+
+                        ListIterator var10 = inv.iterator();
+
+                        while(var10.hasNext()) {
+                            ItemStack i = (ItemStack)var10.next();
+                            if (item.getType() == Material.AIR && (i == null || i.getType() == Material.AIR) || i != null && i.isSimilar(item)) {
+                                return inv;
+                            }
+                        }
+                    }
                 }
-        return null;
+            }
+
+            return null;
+        }
     }
 
     private Class<?> getNMSClass(String name) throws ClassNotFoundException {
@@ -704,5 +741,7 @@ public final class TurretsMain extends JavaPlugin implements Listener {
             super(message, cause);
         }
     }
+    static {
+        INVENTORY_MATERIALS = new Material[]{Material.CHEST, Material.TRAPPED_CHEST, Material.FURNACE, Material.HOPPER, Material.DROPPER, Material.DISPENSER, Material.BREWING_STAND};
+    }
 }
-

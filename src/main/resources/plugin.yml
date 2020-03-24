@@ -1,6 +1,14 @@
 main: com.snowleopard1863.APTurrets.TurretsMain
-version: 2.2.0
+version: 2.3.6
 name: APTurrets
+authors: [Foxtrot2400, Snowleopard1863, TylerS1066, cccm5, MrUniverse_]
 
-depend: [Movecraft, WorldGuard]
-softdepend: [Vault]
+depend: [Movecraft, WorldGuard, Vault, WorldEdit]
+
+permissions:
+  ap-turrets.use:
+    default: op
+  ap-turrets.regionoverride:
+    default: op
+  ap-turrets.place:
+    default: op
