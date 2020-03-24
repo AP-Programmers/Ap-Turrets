@@ -7,15 +7,11 @@ import net.countercraft.movecraft.craft.Craft;
 import net.countercraft.movecraft.craft.CraftManager;
 import net.countercraft.movecraft.utils.MovecraftLocation;
 import net.milkbowl.vault.economy.Economy;
-import net.minecraft.server.v1_10_R1.EntityPlayer;
-import net.minecraft.server.v1_10_R1.EntityTippedArrow;
-import net.minecraft.server.v1_10_R1.PacketPlayOutEntityDestroy;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.Sign;
 import org.bukkit.configuration.file.FileConfiguration;
-import org.bukkit.craftbukkit.v1_10_R1.entity.CraftPlayer;
 import org.bukkit.entity.Arrow;
 import org.bukkit.entity.Boat;
 import org.bukkit.entity.Horse;
@@ -43,6 +39,7 @@ import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
+import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -63,12 +60,15 @@ public final class TurretsMain extends JavaPlugin implements Listener {
     private double delayBetweenShots;
     private static Economy economy;
     private static CraftManager craftManager;
+    private String serverVersion;
     private static final Material[] INVENTORY_MATERIALS = new Material[]{Material.CHEST, Material.TRAPPED_CHEST, Material.FURNACE, Material.HOPPER, Material.DROPPER, Material.DISPENSER, Material.BREWING_STAND};
     private final ItemStack TURRETAMMO = new ItemStack(Material.ARROW, 1);
 
     @Override
     public void onEnable() {
         //Basic Setup
+        String packageName = getServer().getClass().getPackage().getName();
+        serverVersion = packageName.substring(packageName.lastIndexOf(".") + 1);
         final Plugin p = this;
         logger.info(pdfile.getName() + " v" + pdfile.getVersion() + " has been enbaled.");
         getServer().getPluginManager().registerEvents(this, this);
@@ -372,10 +372,20 @@ public final class TurretsMain extends JavaPlugin implements Listener {
             arrow.setMetadata("tracer", new FixedMetadataValue(this, true));
             tracedArrows.add(arrow);
             arrow.setCritical(false);
+            arrow.getEntityId();
+            //PacketPlayOutEntityDestroy packet = new PacketPlayOutEntityDestroy(arrow.getEntityId());
+            try {
+                Object packet = getNMSClass("PacketPlayOutEntityDestroy").getConstructor(int.class).newInstance(arrow.getEntityId());
+                for (Player p : getServer().getOnlinePlayers()) {
+                    Object nmsPlayer = p.getClass().getMethod("getHandle").invoke(p);
+                    Object pConn = nmsPlayer.getClass().getField("playerConnection").get(nmsPlayer);
+                    pConn.getClass().getMethod("sendPacket", getNMSClass("Packet")).invoke(pConn, packet);
+                }
 
-            PacketPlayOutEntityDestroy packet = new PacketPlayOutEntityDestroy(arrow.getEntityId());
-            for (Player p : getServer().getOnlinePlayers())
-                ((CraftPlayer) p).getHandle().playerConnection.sendPacket(packet);
+            } catch (Throwable e) {
+                e.printStackTrace();
+            }
+
         } else {
             arrow.setCritical(true);
         }
@@ -387,14 +397,16 @@ public final class TurretsMain extends JavaPlugin implements Listener {
     }
 
     private Arrow launchArrow(Player bukkitPlayer) {
-        EntityPlayer player = ((CraftPlayer) bukkitPlayer).getHandle();
-        net.minecraft.server.v1_10_R1.World world = player.getWorld();
-        EntityTippedArrow arrow = new EntityTippedArrow(world, player);
-
-        arrow.setNoGravity(true);
-        world.addEntity(arrow);
-
-        return (Arrow) arrow.getBukkitEntity();
+        try {
+            Object nmsPlayer = bukkitPlayer.getClass().getMethod("getHandle").invoke(bukkitPlayer);
+            Object nmsWorld = nmsPlayer.getClass().getMethod("getWorld").invoke(nmsPlayer);
+            Object nmsArrow = getNMSClass("EntityTippedArrow").getConstructor(getNMSClass("World"), getNMSClass("EntityLiving")).newInstance(nmsWorld, nmsPlayer);
+            nmsArrow.getClass().getMethod("setNoGravity", boolean.class).invoke(nmsArrow, true);
+            nmsWorld.getClass().getMethod("addEntity", getNMSClass("Entity")).invoke(nmsWorld, nmsArrow);
+            return (Arrow) nmsArrow.getClass().getMethod("getBukkitEntity").invoke(nmsArrow);
+        } catch (Throwable e) {
+            throw new ArrowLaunchException("Something went wrong when trying to launch an arrow", e);
+        }
     }
 
     @EventHandler
@@ -681,6 +693,16 @@ public final class TurretsMain extends JavaPlugin implements Listener {
                             return inv;
                 }
         return null;
+    }
+
+    private Class<?> getNMSClass(String name) throws ClassNotFoundException {
+        return Class.forName("net.minecraft.server." + serverVersion + "." + name);
+    }
+
+    private static class ArrowLaunchException extends RuntimeException {
+        public ArrowLaunchException(String message, Throwable cause) {
+            super(message, cause);
+        }
     }
 }
 
