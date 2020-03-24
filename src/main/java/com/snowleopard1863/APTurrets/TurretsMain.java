@@ -11,7 +11,8 @@ import java.util.*;
 import java.util.logging.Logger;
 import net.countercraft.movecraft.craft.Craft;
 import net.countercraft.movecraft.craft.CraftManager;
-import net.countercraft.movecraft.utils.MovecraftLocation;
+import net.countercraft.movecraft.MovecraftLocation;
+import net.countercraft.movecraft.utils.HitBox;
 import net.milkbowl.vault.economy.Economy;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -680,28 +681,21 @@ public final class TurretsMain extends JavaPlugin implements Listener {
         return locations;
     }
 
-    public static ArrayList<Location> movecraftLocationToBukkitLocation(MovecraftLocation[] movecraftLocations, World world) {
+    public static ArrayList<Location> movecraftLocationToBukkitLocation(HitBox movecraftLocations, World world) {
         ArrayList<Location> locations = new ArrayList();
-        MovecraftLocation[] var3 = movecraftLocations;
-        int var4 = movecraftLocations.length;
 
-        for(int var5 = 0; var5 < var4; ++var5) {
-            MovecraftLocation movecraftLoc = var3[var5];
-            locations.add(movecraftLocationToBukkitLocation(movecraftLoc, world));
+        for(MovecraftLocation ml : movecraftLocations) {
+            locations.add(ml.toBukkit(world));
         }
 
         return locations;
-    }
-
-    public static MovecraftLocation bukkitLocationToMovecraftLocation(Location loc) {
-        return new MovecraftLocation(loc.getBlockX(), loc.getBlockY(), loc.getBlockZ());
     }
 
     public static Inventory firstInventory(Craft craft, ItemStack item, Material... lookup) {
         if (craft == null) {
             throw new IllegalArgumentException("craft must not be null");
         } else {
-            Iterator var3 = movecraftLocationToBukkitLocation(craft.getBlockList(), craft.getW()).iterator();
+            Iterator var3 = movecraftLocationToBukkitLocation(craft.getHitBox(), craft.getW()).iterator();
 
             while(var3.hasNext()) {
                 Location loc = (Location)var3.next();

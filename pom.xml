@@ -57,7 +57,7 @@
 			<artifactId>movecraft</artifactId>
 			<version>6.0.0</version>
 			<scope>system</scope>
-			<systemPath>${project.basedir}/libs/movecraft_6.0.0.jar</systemPath>
+			<systemPath>${project.basedir}/libs/Movecraft.jar</systemPath>
 		</dependency>
 		<dependency>
 			<groupId>net.milkbowl.vault</groupId>
