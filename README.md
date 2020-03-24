@@ -9,7 +9,8 @@ This plugin has no commands.
 ```
 
 ### Permissions: 
-```ap-turrets.use - Ability for one to use turrets
+```
+ap-turrets.use - Ability for one to use turrets
 ap-turrets.regionoverride - Ability for one to place turrets outside of a WG region
 ap-turrets.place - Ability for one to place a turret at all
 
