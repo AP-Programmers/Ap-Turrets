@@ -1,7 +1,7 @@
 # AP-Turrets
 Mounted Guns! 
 
-**Built and tested in Java 8 on Spigot 1.10.2 with Movecraft 6**
+**Built and tested in Java 8 on Spigot 1.10.2 with Movecraft 7**
 
 ### Commands:
 ```
