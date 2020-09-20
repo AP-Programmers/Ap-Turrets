@@ -18,6 +18,18 @@ jobs:
         path: ~/.m2
         key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
         restore-keys: ${{ runner.os }}-m2
+
+    # Run Spigot BuildTools for NMS if required
+    - name: Setup BuildTools
+      if: steps.cache.outputs.cache-hit != 'true'
+      run: mkdir BuildTools
+    - name: Download BuildTools
+      if: steps.cache.outputs.cache-hit != 'true'
+      run: wget -O BuildTools/BuildTools.jar https://hub.spigotmc.org/jenkins/job/BuildTools/lastSuccessfulBuild/artifact/target/BuildTools.jar
+    - name: 1.10.2
+      if: steps.cache.outputs.cache-hit != 'true'
+      run: cd BuildTools && java -jar BuildTools.jar --rev 1.10.2
+
     - name: Build with Maven
       run: mvn -B package --file pom.xml
     - name: Stage jar
