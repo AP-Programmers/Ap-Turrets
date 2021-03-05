@@ -118,6 +118,7 @@ public class TurretsMain extends JavaPlugin implements Listener {
         getServer().getPluginManager().registerEvents(new EntityDamageListener(), this);
         getServer().getPluginManager().registerEvents(new PlayerInteractEntityListener(), this);
         getServer().getPluginManager().registerEvents(new PlayerInteractListener(), this);
+        getServer().getPluginManager().registerEvents(new PlayerMoveListener(), this);
         getServer().getPluginManager().registerEvents(new PlayerToggleSneakListener(), this);
         getServer().getPluginManager().registerEvents(new ProjectileHitListener(), this);
 
@@ -333,22 +334,6 @@ public class TurretsMain extends JavaPlugin implements Listener {
             }
         }
 
-    }
-
-    @EventHandler
-    public void onPlayerMove(PlayerMoveEvent e){
-        // Whenever the player moves, stop them from doing so.
-        Player player = e.getPlayer();
-        if (this.onTurrets.contains(player)){
-            Location locationPre = e.getFrom();
-            Location locationCur = e.getTo();
-            if ((locationCur.getBlockX() != locationPre.getBlockX()) || locationCur.getBlockY() != locationPre.getBlockY() || locationCur.getBlockZ() != locationPre.getBlockZ()){
-                e.setCancelled(true); // This can reportedly be buggy. I didn't notice any during testing time, but if you do, this is the alternative:
-                // player.teleport(locationPre);
-                // This will probably cause problems if a player tries to move on a cruising craft however, while cancelling the event will guarantee the player will stick to the craft
-
-            }
-        }
     }
 
     public void demount(Player player, Location signPos) {
