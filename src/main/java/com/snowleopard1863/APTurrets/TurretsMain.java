@@ -6,6 +6,7 @@ import java.util.*;
 
 import com.snowleopard1863.APTurrets.config.Config;
 import com.snowleopard1863.APTurrets.exception.ArrowLaunchException;
+import com.snowleopard1863.APTurrets.listener.PlayerInteractListener;
 import com.snowleopard1863.APTurrets.task.ArrowTracerTask;
 import net.countercraft.movecraft.craft.Craft;
 import net.countercraft.movecraft.craft.CraftManager;
@@ -114,6 +115,7 @@ public class TurretsMain extends JavaPlugin implements Listener {
         }
 
         getServer().getPluginManager().registerEvents(this, this);
+        getServer().getPluginManager().registerEvents(new PlayerInteractListener(), this);
 
         String packageName = getServer().getClass().getPackage().getName();
         serverVersion = packageName.substring(packageName.lastIndexOf(".") + 1);
@@ -137,100 +139,6 @@ public class TurretsMain extends JavaPlugin implements Listener {
         getLogger().info(getDescription().getName() + " v" + getDescription().getVersion() + " has been disabled.");
     }
 
-    @EventHandler
-    public void onClick(PlayerInteractEvent event) {
-        // Runs whenever the player clicks
-        if (event.getAction() == Action.RIGHT_CLICK_AIR || event.getAction() == Action.RIGHT_CLICK_BLOCK) {
-            if (Config.Debug) {
-                getLogger().info(event.getPlayer() + " has right clicked");
-            }
-
-            Player player = event.getPlayer();
-            if (onTurrets.contains(player) && player.hasPermission("ap-turrets.use")) {  // If the player is allowed,
-                if (Config.Debug) {
-                    getLogger().info(event.getPlayer() + " is on a turret");
-                }
-
-                if (player.getInventory().getItemInMainHand().getType() == Material.MILK_BUCKET || player.getInventory().getItemInOffHand().getType() == Material.MILK_BUCKET) {
-                    if (Config.Debug) {
-                        getLogger().info(event.getPlayer() + " has right clicked a milk bucket!");
-                    }
-                    // If the player tries to use milk to clear the effects, cancel the event to keep that from happening
-                    event.setCancelled(true);
-                }
-
-                if (player.getInventory().getItemInMainHand().getType() == Material.STONE_BUTTON || player.getInventory().getItemInOffHand().getType() == Material.STONE_BUTTON) {
-                    if (this.reloading.contains(player)) {
-                        return;
-                    }
-                    // Fires the turret and keeps them from interacting with something else and placing the button accidentally
-                    this.fireTurret(player);
-                    event.setCancelled(true);
-                    if (Config.Debug) {
-                        getLogger().info(event.getPlayer() + " has started to shoot");
-                    }
-                }
-            }
-        }
-
-        Sign sign;
-        if (event.getAction() == Action.RIGHT_CLICK_BLOCK) {
-            if (Config.Debug) {
-                getLogger().info("A block has been right clicked");
-            }
-
-            if (event.getClickedBlock().getType() == Material.SIGN_POST || event.getClickedBlock().getType() == Material.WALL_SIGN || event.getClickedBlock().getType() == Material.SIGN) {
-
-                if (Config.Debug) {
-                    getLogger().info("A sign was clicked");
-                }
-
-                sign = (Sign)event.getClickedBlock().getState();
-                if ("Mounted".equalsIgnoreCase(sign.getLine(0)) && "Gun".equalsIgnoreCase(sign.getLine(1))) {
-                    // If the player clicks a sign post, and that sign post says "Mounted Gun" on it, mount them to the turret
-                    if (Config.Debug) {
-                        getLogger().info("A Mounted Gun sign has been clicked");
-                    }
-
-                    Block b = sign.getLocation().subtract(0.0D, 1.0D, 0.0D).getBlock();
-                    if (b.getType() != Material.SLIME_BLOCK) {
-                        Location signPos = event.getClickedBlock().getLocation();
-                        signPos.setPitch(event.getPlayer().getLocation().getPitch());
-                        signPos.setDirection(event.getPlayer().getVelocity());
-                        this.mount(event.getPlayer(), signPos);
-                    }
-                }
-            }
-        }
-
-        if (event.getAction() == Action.LEFT_CLICK_BLOCK && event.getPlayer().getInventory().getItemInMainHand().getType() == Material.STONE_BUTTON) {
-            // If a player left clicks the mounted gun with a stone button in hand, show them the statistics for the plugin (Damage, Knockback, Velocity, etc.)
-            if (Config.Debug) {
-                getLogger().info("A block has been left clicked while holding a button");
-            }
-
-            if (event.getClickedBlock().getType() == Material.SIGN_POST || event.getClickedBlock().getType() == Material.WALL_SIGN || event.getClickedBlock().getType() == Material.SIGN) {
-                if (Config.Debug) {
-                    getLogger().info("A sign was left clicked");
-                }
-
-                sign = (Sign)event.getClickedBlock().getState();
-                if ("Mounted".equalsIgnoreCase(sign.getLine(0)) && "Gun".equalsIgnoreCase(sign.getLine(1))) {
-                    if (Config.Debug) {
-                        getLogger().info("A Mounted Gun sign has been left clicked");
-                    }
-
-                    event.setCancelled(true);
-                    if (!sign.getLine(3).equals("")) {
-                        this.sendMessage(event.getPlayer(), "\n" + ChatColor.GOLD + "Type: " + ChatColor.BLACK + sign.getLine(3) + "\n" + ChatColor.GOLD + "Damage/Shot: " + ChatColor.GRAY + Config.Damage + "\n" + ChatColor.GOLD + "Delay Between Shots: " + ChatColor.GRAY + Config.DelayBetweenShots + "\n" + ChatColor.GOLD + "Velocity: " + ChatColor.GRAY + Config.ArrowVelocity + "\n" + ChatColor.GOLD + "Fire Chance: " + ChatColor.GRAY + Config.IncindiaryChance * 100.0D + "%\n" + ChatColor.GOLD + "Knockback: " + ChatColor.GRAY + Config.KnockbackStrength + "\n" + ChatColor.GOLD + "Cost to Place: " + ChatColor.GRAY + "$" + Config.CostToPlace);
-                    } else {
-                        this.sendMessage(event.getPlayer(), "\n" + ChatColor.GOLD + "Damage/Shot: " + ChatColor.GRAY + Config.Damage + "\n" + ChatColor.GOLD + "Delay Between Shots: " + ChatColor.GRAY + Config.DelayBetweenShots + "\n" + ChatColor.GOLD + "Velocity: " + ChatColor.GRAY + Config.ArrowVelocity + "\n" + ChatColor.GOLD + "Fire Chance: " + ChatColor.GRAY + Config.IncindiaryChance * 100.0D + "%\n" + ChatColor.GOLD + "Knockback: " + ChatColor.GRAY + Config.KnockbackStrength + "\n" + ChatColor.GOLD + "Cost to Place: $" + ChatColor.GRAY + Config.CostToPlace);
-                    }
-                }
-            }
-        }
-
-    }
 
     @EventHandler
     public void onEntityInteract(PlayerInteractEntityEvent e) {
