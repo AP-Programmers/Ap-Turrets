@@ -6,6 +6,7 @@ import java.util.*;
 
 import com.snowleopard1863.APTurrets.config.Config;
 import com.snowleopard1863.APTurrets.exception.ArrowLaunchException;
+import com.snowleopard1863.APTurrets.listener.PlayerInteractEntityListener;
 import com.snowleopard1863.APTurrets.listener.PlayerInteractListener;
 import com.snowleopard1863.APTurrets.task.ArrowTracerTask;
 import net.countercraft.movecraft.craft.Craft;
@@ -115,6 +116,7 @@ public class TurretsMain extends JavaPlugin implements Listener {
         }
 
         getServer().getPluginManager().registerEvents(this, this);
+        getServer().getPluginManager().registerEvents(new PlayerInteractEntityListener(), this);
         getServer().getPluginManager().registerEvents(new PlayerInteractListener(), this);
 
         String packageName = getServer().getClass().getPackage().getName();
@@ -137,20 +139,6 @@ public class TurretsMain extends JavaPlugin implements Listener {
         reloading.clear();
         tracedArrows.clear();
         getLogger().info(getDescription().getName() + " v" + getDescription().getVersion() + " has been disabled.");
-    }
-
-
-    @EventHandler
-    public void onEntityInteract(PlayerInteractEntityEvent e) {
-        Player p = e.getPlayer();
-        if (this.onTurrets.contains(p) && (e.getRightClicked() instanceof Boat || e.getRightClicked() instanceof Horse)) {
-            // If someone tries to hop on a horse while already on a gun, demount them from the gun
-            this.demount(p, p.getLocation());
-            if (Config.Debug) {
-                getLogger().info("Player: " + p.getName() + "Has Mounted An Entity.");
-            }
-        }
-
     }
 
     @EventHandler
