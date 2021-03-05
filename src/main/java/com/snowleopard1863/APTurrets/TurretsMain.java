@@ -121,6 +121,7 @@ public class TurretsMain extends JavaPlugin implements Listener {
         getServer().getPluginManager().registerEvents(new PlayerInteractEntityListener(), this);
         getServer().getPluginManager().registerEvents(new PlayerInteractListener(), this);
         getServer().getPluginManager().registerEvents(new PlayerMoveListener(), this);
+        getServer().getPluginManager().registerEvents(new PlayerQuitListener(), this);
         getServer().getPluginManager().registerEvents(new PlayerToggleSneakListener(), this);
         getServer().getPluginManager().registerEvents(new ProjectileHitListener(), this);
 
@@ -347,12 +348,6 @@ public class TurretsMain extends JavaPlugin implements Listener {
         // Remove potion effects and set their walking speed back to normal
         player.removePotionEffect(PotionEffectType.JUMP);
         player.removePotionEffect(PotionEffectType.SLOW);
-    }
-
-    @EventHandler
-    public void onPlayerQuit(PlayerQuitEvent e) {
-        // If the player quits, demount them from the turret
-        this.demount(e.getPlayer(), e.getPlayer().getLocation());
     }
 
     public void sendMessage(Player p, String message) {
