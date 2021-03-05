@@ -1,14 +1,8 @@
-// Original Code by snowleopard1863
-// Most recent updates by Foxtrot2400, TylerS1066 and cccm5
-// AP Turrets Plugin, AKA mounted guns
-
 package com.snowleopard1863.APTurrets;
 
-// Imports
 import com.sk89q.worldguard.bukkit.WGBukkit;
 import com.sk89q.worldguard.protection.managers.RegionManager;
 import java.util.*;
-import java.util.logging.Logger;
 
 import com.snowleopard1863.APTurrets.config.Config;
 import net.countercraft.movecraft.craft.Craft;
@@ -27,7 +21,6 @@ import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.Sign;
-import org.bukkit.configuration.file.FileConfiguration;
 import org.bukkit.entity.Arrow;
 import org.bukkit.entity.Boat;
 import org.bukkit.entity.Horse;
@@ -45,18 +38,15 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.metadata.FixedMetadataValue;
-import org.bukkit.plugin.Plugin;
-import org.bukkit.plugin.PluginDescriptionFile;
 import org.bukkit.plugin.RegisteredServiceProvider;
 import org.bukkit.plugin.java.JavaPlugin;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
-public final class TurretsMain extends JavaPlugin implements Listener {
-    private List<Player> onTurrets = new ArrayList();
-    private List<Player> reloading = new ArrayList();
-    private List<Arrow> tracedArrows = new ArrayList();
-    private HashMap<String, Location> loc = new HashMap<String, Location>();
+public class TurretsMain extends JavaPlugin implements Listener {
+    private final ArrayList<Player> onTurrets = new ArrayList<>();
+    private final ArrayList<Player> reloading = new ArrayList<>();
+    private final ArrayList<Arrow> tracedArrows = new ArrayList<>();
     private static Economy economy;
     private static CraftManager craftManager;
 
@@ -68,85 +58,81 @@ public final class TurretsMain extends JavaPlugin implements Listener {
         this.TURRETAMMO = new ItemStack(Material.ARROW, 1);
     }
 
+    private static TurretsMain instance;
+
+    public static TurretsMain getInstance() {
+        return instance;
+    }
+
     public void onEnable() {
-        String packageName = getServer().getClass().getPackage().getName();
-        serverVersion = packageName.substring(packageName.lastIndexOf(".") + 1);
-        // Runs when the plugin starts
-        getLogger().info(getDescription().getName() + " v" + getDescription().getVersion() + " has been enabled.");
-        getServer().getPluginManager().registerEvents(this, this);
-        // Set up our configuration file
-        getConfig().addDefault("Debug mode", false);
-        getConfig().addDefault("Cost to Place", 15000.0D);
-        getConfig().addDefault("Take arrows from inventory", true);
-        getConfig().addDefault("Take arrows from chest", true);
-        getConfig().addDefault("Require Ammo", true);
-        getConfig().addDefault("Damage per arrow", 2.5D);
-        getConfig().addDefault("Incindiary chance", 0.1D);
-        getConfig().addDefault("Knockback strength", 2);
-        getConfig().addDefault("Arrow velocity", 4.0D);
-        getConfig().addDefault("Particle tracers", true);
-        getConfig().addDefault("Delay between shots", 0.2D);
-        getConfig().options().copyDefaults(true);
-        saveConfig();
-        // Pull all of our configs from the configuration file
-        Config.Debug = this.getConfig().getBoolean("Debug mode");
-        Config.takeFromChest = this.getConfig().getBoolean("Take arrows from chest");
-        Config.takeFromInventory = this.getConfig().getBoolean("Take arrows from inventory");
-        Config.costToPlace = this.getConfig().getDouble("Cost to Place");
-        Config.requireAmmo = this.getConfig().getBoolean("Require Ammo");
-        Config.knockbackStrength = this.getConfig().getInt("Knockback strength");
-        Config.incindiaryChance = this.getConfig().getDouble("Incindiary chance");
-        Config.damage = this.getConfig().getDouble("Damage per arrow");
-        Config.arrowVelocity = this.getConfig().getDouble("Arrow velocity");
-        Config.useParticleTracers = this.getConfig().getBoolean("Particle tracers");
-        Config.delayBetweenShots = this.getConfig().getDouble("Delay between shots");
-        // If we find vault, use it. Otherwise, no vault integration.
-        if (this.getServer().getPluginManager().getPlugin("Vault") != null) {
-            RegisteredServiceProvider<Economy> rsp = this.getServer().getServicesManager().getRegistration(Economy.class);
+        saveDefaultConfig();
+
+        Config.Debug = getConfig().getBoolean("Debug mode", false);
+        Config.TakeFromChest = getConfig().getBoolean("Take arrows from chest", true);
+        Config.TakeFromInventory = getConfig().getBoolean("Take arrows from inventory", true);
+        Config.RequireAmmo = getConfig().getBoolean("Require Ammo", true);
+        Config.CostToPlace = getConfig().getDouble("Cost to Place", 15000.00D);
+        Config.KnockbackStrength = getConfig().getInt("Knockback strength", 2);
+        Config.IncindiaryChance = getConfig().getDouble("Incindiary chance", 0.1D);
+        Config.Damage = getConfig().getDouble("Damage per arrow", 2.5D);
+        Config.ArrowVelocity = getConfig().getDouble("Arrow velocity", 4.0D);
+        Config.UseParticleTracers = getConfig().getBoolean("Particle tracers", true);
+        Config.DelayBetweenShots = getConfig().getDouble("Delay between shots", 0.2D);
+
+
+        if (getServer().getPluginManager().getPlugin("Vault") != null) {
+            RegisteredServiceProvider<Economy> rsp = getServer().getServicesManager().getRegistration(Economy.class);
             if (rsp != null) {
-                economy = (Economy)rsp.getProvider();
+                economy = rsp.getProvider();
                 getLogger().info("Found a compatible Vault plugin.");
-            } else {
+            }
+            else {
                 getLogger().info("[WARNING] Could not find compatible Vault plugin. Disabling Vault integration.");
                 economy = null;
             }
-        } else {
+        }
+        else {
             getLogger().info("Could not find compatible Vault plugin. Disabling Vault integration.");
             economy = null;
         }
 
-        // Same deal with Movecraft. If we can find it, use it.
-        if (this.getServer().getPluginManager().getPlugin("Movecraft") != null) {
+
+        if (getServer().getPluginManager().getPlugin("Movecraft") != null) {
             craftManager = CraftManager.getInstance();
             getLogger().info("Compatible Version Of Movecraft Found.");
-        } else {
+        }
+        else {
             getLogger().info("[WARNING] Could not find compatible Movecraft Version... Disabling");
             craftManager = null;
             return;
         }
-        // If we want to use tracers, this sets it up for us
-        if (Config.useParticleTracers) {
+
+        if (Config.UseParticleTracers) {
             getServer().getScheduler().scheduleSyncRepeatingTask(this, new Runnable() {
                 public void run() {
-                    Iterator<Arrow> iterator = TurretsMain.this.tracedArrows.iterator();
+                    Iterator<Arrow> iterator = tracedArrows.iterator();
 
                     while(iterator.hasNext()) {
                         Arrow a = iterator.next();
                         if (a.isOnGround() || a.isDead() || a.getTicksLived() > 100) {
-                            a.removeMetadata("tracer", TurretsMain.this);
+                            a.removeMetadata("tracer", TurretsMain.getInstance());
                             iterator.remove();
                             a.remove();
                         }
 
                         World world = a.getWorld();
                         world.spawnParticle(Particle.CRIT, a.getLocation(), 1, 0.0D, 0.0D, 0.0D, 0.0D);
-
                     }
-
                 }
             }, 0L, 0L);
         }
 
+        getServer().getPluginManager().registerEvents(this, this);
+
+        String packageName = getServer().getClass().getPackage().getName();
+        serverVersion = packageName.substring(packageName.lastIndexOf(".") + 1);
+        getLogger().info(getDescription().getName() + " v" + getDescription().getVersion() + " has been enabled.");
+        instance = this;
     }
 
     public void onLoad() {
@@ -154,17 +140,14 @@ public final class TurretsMain extends JavaPlugin implements Listener {
     }
 
     public void onDisable() {
-        // Runs whenever the plugin is disabled
-        Iterator var1 = this.onTurrets.iterator();
-
-        while(var1.hasNext()) { // This loops through and kicks all players off their turrets so they aren't just...stuck
-            Player player = (Player)var1.next();
-            this.demount(player, player.getLocation());
-            this.onTurrets.remove(player);
+        // This loops through and kicks all players off their turrets so they aren't just...stuck
+        for (Player player : onTurrets) {
+            demount(player, player.getLocation());
+            onTurrets.remove(player);
         }
 
-        this.reloading.clear();
-        this.tracedArrows.clear();
+        reloading.clear();
+        tracedArrows.clear();
         getLogger().info(getDescription().getName() + " v" + getDescription().getVersion() + " has been disabled.");
     }
 
@@ -177,7 +160,7 @@ public final class TurretsMain extends JavaPlugin implements Listener {
             }
 
             Player player = event.getPlayer();
-            if (this.onTurrets.contains(player) && player.hasPermission("ap-turrets.use")) {  // If the player is allowed,
+            if (onTurrets.contains(player) && player.hasPermission("ap-turrets.use")) {  // If the player is allowed,
                 if (Config.Debug) {
                     getLogger().info(event.getPlayer() + " is on a turret");
                 }
@@ -253,9 +236,9 @@ public final class TurretsMain extends JavaPlugin implements Listener {
 
                     event.setCancelled(true);
                     if (!sign.getLine(3).equals("")) {
-                        this.sendMessage(event.getPlayer(), "\n" + ChatColor.GOLD + "Type: " + ChatColor.BLACK + sign.getLine(3) + "\n" + ChatColor.GOLD + "Damage/Shot: " + ChatColor.GRAY + Config.damage + "\n" + ChatColor.GOLD + "Delay Between Shots: " + ChatColor.GRAY + Config.delayBetweenShots + "\n" + ChatColor.GOLD + "Velocity: " + ChatColor.GRAY + Config.arrowVelocity + "\n" + ChatColor.GOLD + "Fire Chance: " + ChatColor.GRAY + Config.incindiaryChance * 100.0D + "%\n" + ChatColor.GOLD + "Knockback: " + ChatColor.GRAY + Config.knockbackStrength + "\n" + ChatColor.GOLD + "Cost to Place: " + ChatColor.GRAY + "$" + Config.costToPlace);
+                        this.sendMessage(event.getPlayer(), "\n" + ChatColor.GOLD + "Type: " + ChatColor.BLACK + sign.getLine(3) + "\n" + ChatColor.GOLD + "Damage/Shot: " + ChatColor.GRAY + Config.Damage + "\n" + ChatColor.GOLD + "Delay Between Shots: " + ChatColor.GRAY + Config.DelayBetweenShots + "\n" + ChatColor.GOLD + "Velocity: " + ChatColor.GRAY + Config.ArrowVelocity + "\n" + ChatColor.GOLD + "Fire Chance: " + ChatColor.GRAY + Config.IncindiaryChance * 100.0D + "%\n" + ChatColor.GOLD + "Knockback: " + ChatColor.GRAY + Config.KnockbackStrength + "\n" + ChatColor.GOLD + "Cost to Place: " + ChatColor.GRAY + "$" + Config.CostToPlace);
                     } else {
-                        this.sendMessage(event.getPlayer(), "\n" + ChatColor.GOLD + "Damage/Shot: " + ChatColor.GRAY + Config.damage + "\n" + ChatColor.GOLD + "Delay Between Shots: " + ChatColor.GRAY + Config.delayBetweenShots + "\n" + ChatColor.GOLD + "Velocity: " + ChatColor.GRAY + Config.arrowVelocity + "\n" + ChatColor.GOLD + "Fire Chance: " + ChatColor.GRAY + Config.incindiaryChance * 100.0D + "%\n" + ChatColor.GOLD + "Knockback: " + ChatColor.GRAY + Config.knockbackStrength + "\n" + ChatColor.GOLD + "Cost to Place: $" + ChatColor.GRAY + Config.costToPlace);
+                        this.sendMessage(event.getPlayer(), "\n" + ChatColor.GOLD + "Damage/Shot: " + ChatColor.GRAY + Config.Damage + "\n" + ChatColor.GOLD + "Delay Between Shots: " + ChatColor.GRAY + Config.DelayBetweenShots + "\n" + ChatColor.GOLD + "Velocity: " + ChatColor.GRAY + Config.ArrowVelocity + "\n" + ChatColor.GOLD + "Fire Chance: " + ChatColor.GRAY + Config.IncindiaryChance * 100.0D + "%\n" + ChatColor.GOLD + "Knockback: " + ChatColor.GRAY + Config.KnockbackStrength + "\n" + ChatColor.GOLD + "Cost to Place: $" + ChatColor.GRAY + Config.CostToPlace);
                     }
                 }
             }
@@ -296,8 +279,8 @@ public final class TurretsMain extends JavaPlugin implements Listener {
             if (player.hasPermission("ap-turrets.place")) {
                 // If they're allowed to place a turret, notify them that they have placed a turret and take money from their account
                 if (economy != null) {
-                    if (economy.has(player, Config.costToPlace)) {
-                        economy.withdrawPlayer(player, Config.costToPlace);
+                    if (economy.has(player, Config.CostToPlace)) {
+                        economy.withdrawPlayer(player, Config.CostToPlace);
                         player.sendMessage(ChatColor.AQUA + "[" + ChatColor.RED + "Mounted Gun" + ChatColor.AQUA + "] " + ChatColor.GOLD + "Mounted Gun Placed!" + ChatColor.GREEN + " $15,000 has been charged to your balance.");
                         event.setLine(0, "Mounted");
                         event.setLine(1, "Gun");
@@ -309,7 +292,7 @@ public final class TurretsMain extends JavaPlugin implements Listener {
                             getLogger().info("A Mounted Gun sign failed to place");
                         }
 
-                        this.sendMessage(player, "You Don't Have Enough Money To Place A Turret. Cost To Place: " + ChatColor.RED + Config.costToPlace);
+                        this.sendMessage(player, "You Don't Have Enough Money To Place A Turret. Cost To Place: " + ChatColor.RED + Config.CostToPlace);
                     }
                 } else {
                     this.sendMessage(player, "Turret Created!");
@@ -339,8 +322,8 @@ public final class TurretsMain extends JavaPlugin implements Listener {
                 public void run() {
                     TurretsMain.this.reloading.remove(player);
                 }
-            }, (long)((int)(Config.delayBetweenShots * 10.0D)));
-            boolean hasAmmoBeenTaken = !Config.requireAmmo || this.takeAmmo(player);
+            }, (long)((int)(Config.DelayBetweenShots * 10.0D)));
+            boolean hasAmmoBeenTaken = !Config.RequireAmmo || this.takeAmmo(player);
             if (!hasAmmoBeenTaken) {
                 // If they run out of ammo, don't let them fire and play the empty sound
                 player.getWorld().playSound(player.getLocation(), Sound.BLOCK_DISPENSER_FAIL, 1.0F, 2.0F);
@@ -353,21 +336,21 @@ public final class TurretsMain extends JavaPlugin implements Listener {
                 Arrow arrow = this.launchArrow(player);
                 arrow.setShooter(player);
                 Location offsetLocation = player.getLocation().add(player.getLocation().getDirection().multiply(4)); // Just in front of the player
-                arrow.setVelocity(offsetLocation.getDirection().multiply(Config.arrowVelocity));
+                arrow.setVelocity(offsetLocation.getDirection().multiply(Config.ArrowVelocity));
                 arrow.setBounce(false);
                 arrow.setMetadata("isTurretBullet", new FixedMetadataValue(this, true));
-                arrow.setKnockbackStrength(Config.knockbackStrength);
+                arrow.setKnockbackStrength(Config.KnockbackStrength);
                 double rand = Math.random();
-                if (rand <= Config.incindiaryChance) {
+                if (rand <= Config.IncindiaryChance) {
                     arrow.setFireTicks(500);
                 }
 
-                if (Config.useParticleTracers) {
+                if (Config.UseParticleTracers) {
                     arrow.setMetadata("tracer", new FixedMetadataValue(this, true));
                     this.tracedArrows.add(arrow);
                     arrow.setCritical(false);
                     //PacketPlayOutEntityDestroy packet = new PacketPlayOutEntityDestroy(new int[]{arrow.getEntityId()});
-                    Iterator var7 = this.getServer().getOnlinePlayers().iterator();
+                    Iterator var7 = getServer().getOnlinePlayers().iterator();
 
                     try {
                         Object packet = getNMSClass("PacketPlayOutEntityDestroy").getConstructor(int[].class).newInstance(new int[]{arrow.getEntityId()});
@@ -483,11 +466,11 @@ public final class TurretsMain extends JavaPlugin implements Listener {
                 event.setCancelled(true);
                 return;
             }
-            event.setDamage(Config.damage);
+            event.setDamage(Config.Damage);
             if (Config.Debug) {
                 Arrow a = (Arrow)event.getDamager();
                 Player shooter = (Player)a.getShooter();
-                getLogger().info(event.getEntity() + " was shot by " + shooter.getName() + " for " + event.getDamage() + " It should be doing " + Config.damage);
+                getLogger().info(event.getEntity() + " was shot by " + shooter.getName() + " for " + event.getDamage() + " It should be doing " + Config.Damage);
             }
         }
 
@@ -599,7 +582,7 @@ public final class TurretsMain extends JavaPlugin implements Listener {
 
     public boolean takeAmmo(Player player) {
         // Take ammo from the chest, then from the player, and if both are empty return false and report empty ammo
-        if (Config.takeFromChest) {
+        if (Config.TakeFromChest) {
             Block signBlock = player.getLocation().getBlock();
             if (signBlock.getType() == Material.WALL_SIGN || signBlock.getType() == Material.SIGN_POST) {
                 Sign s = (Sign)signBlock.getState();
@@ -625,7 +608,7 @@ public final class TurretsMain extends JavaPlugin implements Listener {
             }
         }
 
-        if (Config.takeFromInventory && player.getInventory().containsAtLeast(this.TURRETAMMO, 1)) {
+        if (Config.TakeFromInventory && player.getInventory().containsAtLeast(this.TURRETAMMO, 1)) {
             player.getInventory().removeItem(new ItemStack[]{this.TURRETAMMO});
             player.updateInventory();
             return true;

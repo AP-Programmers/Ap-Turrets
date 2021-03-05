@@ -1,0 +1,11 @@
+Debug: false
+TakeFromInventory: true # Whether to take arrows from a player's inventory
+TakeFromChest: true # Same as above, except for chests
+RequireAmmo: true # Whether to require ammo at all
+CostToPlace: 15000.0 # Cost to place a turret
+Damage: 2.5 # How much damage this should deal
+IncindiaryChance: 0.1 # Chance to incinerate your enemies
+ArrowVelocity: 4.0 # Velocity for arrows to go
+KnockbackStrength: 2 # Knockback strength of the arrows
+UseParticleTracers: true # Whether to use tracers
+DelayBetweenShots: 0.2 # Delay between each shot
