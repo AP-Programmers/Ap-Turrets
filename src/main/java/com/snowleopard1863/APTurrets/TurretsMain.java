@@ -115,6 +115,7 @@ public class TurretsMain extends JavaPlugin implements Listener {
         }
 
         getServer().getPluginManager().registerEvents(this, this);
+        getServer().getPluginManager().registerEvents(new EntityDamageEntityListener(), this);
         getServer().getPluginManager().registerEvents(new EntityDamageListener(), this);
         getServer().getPluginManager().registerEvents(new PlayerInteractEntityListener(), this);
         getServer().getPluginManager().registerEvents(new PlayerInteractListener(), this);
@@ -275,24 +276,6 @@ public class TurretsMain extends JavaPlugin implements Listener {
         } catch (Throwable e) {
             throw new ArrowLaunchException("Something went wrong when trying to launch an arrow", e);
         }
-    }
-
-    @EventHandler
-    public void onEntityDamageByEntityEvent(EntityDamageByEntityEvent event) {
-        // If the bullet hits something, make the event do the right amount of damage
-        if (event.getDamager() instanceof Arrow && event.getDamager().hasMetadata("isTurretBullet")) {
-            if(event.getEntity().hasMetadata("BeamingRespawn")) {
-                event.setCancelled(true);
-                return;
-            }
-            event.setDamage(Config.Damage);
-            if (Config.Debug) {
-                Arrow a = (Arrow)event.getDamager();
-                Player shooter = (Player)a.getShooter();
-                getLogger().info(event.getEntity() + " was shot by " + shooter.getName() + " for " + event.getDamage() + " It should be doing " + Config.Damage);
-            }
-        }
-
     }
 
     public void mount(Player player, Location signPos) {
