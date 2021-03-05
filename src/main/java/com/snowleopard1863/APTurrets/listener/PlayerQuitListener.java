@@ -9,6 +9,6 @@ public class PlayerQuitListener implements Listener {
     @EventHandler
     public void onPlayerQuit(PlayerQuitEvent e) {
         // If the player quits, demount them from the turret
-        TurretsMain.getInstance().demount(e.getPlayer(), e.getPlayer().getLocation());
+        TurretsMain.getInstance().getTurretManager().demount(e.getPlayer(), null);
     }
 }

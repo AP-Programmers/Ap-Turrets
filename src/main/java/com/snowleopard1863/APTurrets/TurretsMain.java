@@ -6,6 +6,7 @@ import com.snowleopard1863.APTurrets.config.Config;
 import com.snowleopard1863.APTurrets.exception.ArrowLaunchException;
 import com.snowleopard1863.APTurrets.listener.*;
 import com.snowleopard1863.APTurrets.task.ArrowTracerTask;
+import com.snowleopard1863.APTurrets.utils.NMSUtils;
 import net.countercraft.movecraft.craft.Craft;
 import net.countercraft.movecraft.craft.CraftManager;
 import net.countercraft.movecraft.MovecraftLocation;
@@ -34,13 +35,10 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
 public class TurretsMain extends JavaPlugin implements Listener {
-    public final ArrayList<Player> onTurrets = new ArrayList<>();
-    public final ArrayList<Player> reloading = new ArrayList<>();
-    public final ArrayList<Arrow> tracedArrows = new ArrayList<>();
+    public static final String PREFIX = ChatColor.AQUA + "[" + ChatColor.RED + "Mounted Gun" + ChatColor.AQUA + "] " + ChatColor.GOLD;
     public static Economy economy;
     private static CraftManager craftManager;
 
-    private String serverVersion;
     private static final Material[] INVENTORY_MATERIALS;
     private final ItemStack TURRETAMMO;
 
@@ -53,6 +51,10 @@ public class TurretsMain extends JavaPlugin implements Listener {
     public static TurretsMain getInstance() {
         return instance;
     }
+
+    private NMSUtils nmsUtils;
+    private TurretManager turretManager;
+    private TracerManager tracerManager;
 
     public void onEnable() {
         saveDefaultConfig();
@@ -113,8 +115,9 @@ public class TurretsMain extends JavaPlugin implements Listener {
         getServer().getPluginManager().registerEvents(new ProjectileHitListener(), this);
         getServer().getPluginManager().registerEvents(new SignChangeListener(), this);
 
-        String packageName = getServer().getClass().getPackage().getName();
-        serverVersion = packageName.substring(packageName.lastIndexOf(".") + 1);
+        nmsUtils = new NMSUtils(getServer().getClass().getPackage().getName());
+        turretManager = new TurretManager();
+        tracerManager = new TracerManager();
         getLogger().info(getDescription().getName() + " v" + getDescription().getVersion() + " has been enabled.");
         instance = this;
     }
@@ -124,28 +127,17 @@ public class TurretsMain extends JavaPlugin implements Listener {
     }
 
     public void onDisable() {
-        // This loops through and kicks all players off their turrets so they aren't just...stuck
-        for (Player player : onTurrets) {
-            demount(player, player.getLocation());
-            onTurrets.remove(player);
-        }
-
-        reloading.clear();
-        tracedArrows.clear();
+        turretManager.disable();
+        tracerManager.disable();
         getLogger().info(getDescription().getName() + " v" + getDescription().getVersion() + " has been disabled.");
     }
 
     public void fireTurret(final Player player) {
         // If the player starts to glide, demount them from the turret
         if (player.isGliding()) {
-            this.demount(player, player.getLocation());
+            turretManager.demount(player, player.getLocation());
         } else {
-            this.reloading.add(player);
-            Bukkit.getScheduler().scheduleSyncDelayedTask(this, new Runnable() {
-                public void run() {
-                    TurretsMain.this.reloading.remove(player);
-                }
-            }, (long)((int)(Config.DelayBetweenShots * 10.0D)));
+
             boolean hasAmmoBeenTaken = !Config.RequireAmmo || this.takeAmmo(player);
             if (!hasAmmoBeenTaken) {
                 // If they run out of ammo, don't let them fire and play the empty sound
@@ -170,18 +162,18 @@ public class TurretsMain extends JavaPlugin implements Listener {
 
                 if (Config.UseParticleTracers) {
                     arrow.setMetadata("tracer", new FixedMetadataValue(this, true));
-                    this.tracedArrows.add(arrow);
+                    tracedArrows.add(arrow);
                     arrow.setCritical(false);
                     //PacketPlayOutEntityDestroy packet = new PacketPlayOutEntityDestroy(new int[]{arrow.getEntityId()});
                     Iterator var7 = getServer().getOnlinePlayers().iterator();
 
                     try {
-                        Object packet = getNMSClass("PacketPlayOutEntityDestroy").getConstructor(int[].class).newInstance(new int[]{arrow.getEntityId()});
+                        Object packet = getNMSUtils().getNMSClass("PacketPlayOutEntityDestroy").getConstructor(int[].class).newInstance(new int[]{arrow.getEntityId()});
                         while (var7.hasNext()) {
                             Player p = (Player) var7.next();
                             Object nmsPlayer = p.getClass().getMethod("getHandle").invoke(p);
                             Object pConn = nmsPlayer.getClass().getField("playerConnection").get(nmsPlayer);
-                            pConn.getClass().getMethod("sendPacket", getNMSClass("Packet")).invoke(pConn, packet);
+                            pConn.getClass().getMethod("sendPacket", getNMSUtils().getNMSClass("Packet")).invoke(pConn, packet);
                         }
                     } catch (Exception e) {
                         e.printStackTrace();
@@ -206,88 +198,13 @@ public class TurretsMain extends JavaPlugin implements Listener {
         try {
             Object nmsPlayer = bukkitPlayer.getClass().getMethod("getHandle").invoke(bukkitPlayer);
             Object nmsWorld = nmsPlayer.getClass().getMethod("getWorld").invoke(nmsPlayer);
-            Object nmsArrow = getNMSClass("EntityTippedArrow").getConstructor(getNMSClass("World"), getNMSClass("EntityLiving")).newInstance(nmsWorld, nmsPlayer);
+            Object nmsArrow = getNMSUtils().getNMSClass("EntityTippedArrow").getConstructor(getNMSUtils().getNMSClass("World"), getNMSUtils().getNMSClass("EntityLiving")).newInstance(nmsWorld, nmsPlayer);
             nmsArrow.getClass().getMethod("setNoGravity", boolean.class).invoke(nmsArrow, true);
-            nmsWorld.getClass().getMethod("addEntity", getNMSClass("Entity")).invoke(nmsWorld, nmsArrow);
+            nmsWorld.getClass().getMethod("addEntity", getNMSUtils().getNMSClass("Entity")).invoke(nmsWorld, nmsArrow);
             return (Arrow) nmsArrow.getClass().getMethod("getBukkitEntity").invoke(nmsArrow);
         } catch (Throwable e) {
             throw new ArrowLaunchException("Something went wrong when trying to launch an arrow", e);
         }
-    }
-
-    public void mount(Player player, Location signPos) {
-        if (signPos.getBlock().getType() != Material.SIGN && signPos.getBlock().getType() != Material.SIGN_POST && signPos.getBlock().getType() != Material.WALL_SIGN) {
-            getLogger().warning("Sign not found!");
-        } else {
-            if (Config.Debug) {
-                getLogger().info("Sign detected");
-            }
-
-            Sign sign = (Sign)signPos.getBlock().getState();
-            if (this.onTurrets.contains(player)) {
-                // If the player tries to mount an already mounted turret, tell them no
-                if(onTurrets.contains(player)){
-                    // this.sendMessage(player, "You are already on this turret!"); // We aren't using a message here, but if you want to, this is the one I made up for it
-                }
-                else {
-                    this.sendMessage(player, "You May Only Have One Person Mounted Per Turret.");
-                }
-                if (Config.Debug) {
-                    getLogger().info("1 player per turret");
-                }
-            } else {
-                if (Config.Debug) {
-                    getLogger().info(player.getName() + " is now on a turret");
-                }
-
-                sign.setLine(2, player.getName());
-                sign.update();
-                this.onTurrets.add(player);
-                signPos.add(0.5D, 0.0D, 0.5D);
-                signPos.setDirection(player.getEyeLocation().getDirection());
-                player.teleport(signPos);
-                // Effects to add zoom and lock a player from jumping
-                player.addPotionEffect(new PotionEffect(PotionEffectType.SLOW, 1000000, 6));
-                //player.setWalkSpeed(0.0F); //Previously this was used. If you use it, you don't have to use the onPlayerMove event, but it breaks the zoom effect that slowness gives you.
-                player.addPotionEffect(new PotionEffect(PotionEffectType.JUMP, 1000000, 200));
-
-            }
-        }
-
-    }
-
-    public void demount(Player player, Location signPos) {
-        // Demounting the player from the turret
-        if (Config.Debug) {
-            getLogger().info(player.getName() + " is being taken off a turret");
-        }
-
-        this.onTurrets.remove(player);
-        this.reloading.remove(player);
-        if (signPos.getBlock().getType() != Material.SIGN && signPos.getBlock().getType() != Material.SIGN_POST && signPos.getBlock().getType() != Material.WALL_SIGN) {
-            if (Config.Debug) {
-                getLogger().warning("Sign not found!");
-            }
-        } else {
-            if (Config.Debug) {
-                getLogger().info("sign found and updated");
-            }
-
-            Sign sign = (Sign)signPos.getBlock().getState();
-            sign.setLine(2, "");
-            sign.update();
-        }
-
-        signPos.subtract(-0.5D, 0.0D, -0.5D);
-        player.setWalkSpeed(0.2F);
-        // Remove potion effects and set their walking speed back to normal
-        player.removePotionEffect(PotionEffectType.JUMP);
-        player.removePotionEffect(PotionEffectType.SLOW);
-    }
-
-    public void sendMessage(Player p, String message) {
-        // Message formatter
-        p.sendMessage(ChatColor.AQUA + "[" + ChatColor.RED + "Mounted Gun" + ChatColor.AQUA + "] " + ChatColor.GOLD + message);
     }
 
     public boolean takeAmmo(Player player) {
@@ -394,11 +311,19 @@ public class TurretsMain extends JavaPlugin implements Listener {
         }
     }
 
-    private Class<?> getNMSClass(String name) throws ClassNotFoundException {
-        return Class.forName("net.minecraft.server." + serverVersion + "." + name);
-    }
-
     static {
         INVENTORY_MATERIALS = new Material[]{Material.CHEST, Material.TRAPPED_CHEST, Material.FURNACE, Material.HOPPER, Material.DROPPER, Material.DISPENSER, Material.BREWING_STAND};
+    }
+
+    public NMSUtils getNMSUtils() {
+        return nmsUtils;
+    }
+
+    public TurretManager getTurretManager() {
+        return turretManager;
+    }
+
+    public TracerManager getTracerManager() {
+        return tracerManager;
     }
 }

@@ -58,12 +58,12 @@ public class PlayerInteractListener implements Listener {
             Location signPos = event.getClickedBlock().getLocation();
             signPos.setPitch(event.getPlayer().getLocation().getPitch());
             signPos.setDirection(event.getPlayer().getVelocity());
-            TurretsMain.getInstance().mount(event.getPlayer(), signPos);
+            TurretsMain.getInstance().getTurretManager().mount(event.getPlayer(), signPos);
     }
 
     private void rightClick(PlayerInteractEvent event) {
         Player player = event.getPlayer();
-        if (!TurretsMain.getInstance().onTurrets.contains(player) || !player.hasPermission("ap-turrets.use"))
+        if (!TurretsMain.getInstance().getTurretManager().isOnTurret(player) || !player.hasPermission("ap-turrets.use"))
             return;
 
         if (player.getInventory().getItemInMainHand().getType() == Material.MILK_BUCKET || player.getInventory().getItemInOffHand().getType() == Material.MILK_BUCKET) {
@@ -75,7 +75,7 @@ public class PlayerInteractListener implements Listener {
         if (player.getInventory().getItemInMainHand().getType() != Material.STONE_BUTTON && player.getInventory().getItemInOffHand().getType() != Material.STONE_BUTTON)
             return;
 
-        if (TurretsMain.getInstance().reloading.contains(player))
+        if (TurretsMain.getInstance().getTurretManager().isReloading(player))
             return;
 
         // Fires the turret and keeps them from interacting with something else and placing the button accidentally
