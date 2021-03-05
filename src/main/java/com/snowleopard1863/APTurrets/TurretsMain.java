@@ -134,15 +134,16 @@ public final class TurretsMain extends JavaPlugin implements Listener {
         } else {
             this.logger.info("[WARNING] Could not find compatible Movecraft Version... Disabling");
             craftManager = null;
+            return;
         }
         // If we want to use tracers, this sets it up for us
-        if (this.useParticleTracers) {
-            this.getServer().getScheduler().scheduleSyncRepeatingTask(this, new Runnable() {
+        if (useParticleTracers) {
+            getServer().getScheduler().scheduleSyncRepeatingTask(this, new Runnable() {
                 public void run() {
-                    Iterator iterator = TurretsMain.this.tracedArrows.iterator();
+                    Iterator<Arrow> iterator = TurretsMain.this.tracedArrows.iterator();
 
                     while(iterator.hasNext()) {
-                        Arrow a = (Arrow)iterator.next();
+                        Arrow a = iterator.next();
                         if (a.isOnGround() || a.isDead() || a.getTicksLived() > 100) {
                             a.removeMetadata("tracer", TurretsMain.this);
                             iterator.remove();
@@ -291,7 +292,6 @@ public final class TurretsMain extends JavaPlugin implements Listener {
     @EventHandler
     public void eventSignChanged(SignChangeEvent event) {
         Player player = event.getPlayer();
-        Plugin wg = this.getServer().getPluginManager().getPlugin("WorldGuard");
         Location location = player.getLocation();
         RegionManager rm = WGBukkit.getRegionManager(player.getWorld());
         if ("Mounted".equalsIgnoreCase(event.getLine(0)) && "Gun".equalsIgnoreCase(event.getLine(1))) {
@@ -492,6 +492,10 @@ public final class TurretsMain extends JavaPlugin implements Listener {
     public void onEntityDamageByEntityEvent(EntityDamageByEntityEvent event) {
         // If the bullet hits something, make the event do the right amount of damage
         if (event.getDamager() instanceof Arrow && event.getDamager().hasMetadata("isTurretBullet")) {
+            if(event.getEntity().hasMetadata("BeamingRespawn")) {
+                event.setCancelled(true);
+                return;
+            }
             event.setDamage(this.damage);
             if (this.Debug) {
                 Arrow a = (Arrow)event.getDamager();
@@ -568,7 +572,9 @@ public final class TurretsMain extends JavaPlugin implements Listener {
         this.onTurrets.remove(player);
         this.reloading.remove(player);
         if (signPos.getBlock().getType() != Material.SIGN && signPos.getBlock().getType() != Material.SIGN_POST && signPos.getBlock().getType() != Material.WALL_SIGN) {
-            this.logger.warning("Sign not found!");
+            if (this.Debug) {
+                this.logger.warning("Sign not found!");
+            }
         } else {
             if (this.Debug) {
                 this.logger.info("sign found and updated");
@@ -602,7 +608,6 @@ public final class TurretsMain extends JavaPlugin implements Listener {
         if (this.onTurrets.contains(e.getEntity().getKiller())) {
             e.setDeathMessage(e.getEntity().getDisplayName() + " was gunned down by " + e.getEntity().getKiller().getDisplayName() + ".");
         }
-
     }
 
     public boolean takeAmmo(Player player) {
@@ -662,23 +667,6 @@ public final class TurretsMain extends JavaPlugin implements Listener {
 
             return null;
         }
-    }
-
-    public static Location movecraftLocationToBukkitLocation(MovecraftLocation movecraftLoc, World world) {
-        // Location converter
-        return new Location(world, (double)movecraftLoc.getX(), (double)movecraftLoc.getY(), (double)movecraftLoc.getZ());
-    }
-
-    public static ArrayList<Location> movecraftLocationToBukkitLocation(List<MovecraftLocation> movecraftLocations, World world) {
-        ArrayList<Location> locations = new ArrayList();
-        Iterator var3 = movecraftLocations.iterator();
-
-        while(var3.hasNext()) {
-            MovecraftLocation movecraftLoc = (MovecraftLocation)var3.next();
-            locations.add(movecraftLocationToBukkitLocation(movecraftLoc, world));
-        }
-
-        return locations;
     }
 
     public static ArrayList<Location> movecraftLocationToBukkitLocation(HitBox movecraftLocations, World world) {
