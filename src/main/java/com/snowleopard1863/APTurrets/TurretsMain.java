@@ -6,10 +6,7 @@ import java.util.*;
 
 import com.snowleopard1863.APTurrets.config.Config;
 import com.snowleopard1863.APTurrets.exception.ArrowLaunchException;
-import com.snowleopard1863.APTurrets.listener.PlayerInteractEntityListener;
-import com.snowleopard1863.APTurrets.listener.PlayerInteractListener;
-import com.snowleopard1863.APTurrets.listener.PlayerToggleSneakListener;
-import com.snowleopard1863.APTurrets.listener.ProjectileHitListener;
+import com.snowleopard1863.APTurrets.listener.*;
 import com.snowleopard1863.APTurrets.task.ArrowTracerTask;
 import net.countercraft.movecraft.craft.Craft;
 import net.countercraft.movecraft.craft.CraftManager;
@@ -118,6 +115,7 @@ public class TurretsMain extends JavaPlugin implements Listener {
         }
 
         getServer().getPluginManager().registerEvents(this, this);
+        getServer().getPluginManager().registerEvents(new EntityDamageListener(), this);
         getServer().getPluginManager().registerEvents(new PlayerInteractEntityListener(), this);
         getServer().getPluginManager().registerEvents(new PlayerInteractListener(), this);
         getServer().getPluginManager().registerEvents(new PlayerToggleSneakListener(), this);
@@ -276,35 +274,6 @@ public class TurretsMain extends JavaPlugin implements Listener {
         } catch (Throwable e) {
             throw new ArrowLaunchException("Something went wrong when trying to launch an arrow", e);
         }
-    }
-
-    @EventHandler
-    public void onEntityDamageEvent(EntityDamageEvent event) {
-        // If a player gets hit while on a turret, demount them from the turret. If it's a player, stop them from gliding and/or sprinting
-        if (Config.Debug) {
-            getLogger().info("An entity was damaged");
-        }
-
-        if (event.getEntity() instanceof Player) {
-            if (Config.Debug) {
-                getLogger().info("It was a player");
-            }
-
-            Player player = (Player)event.getEntity();
-            if (this.onTurrets.contains(player)) {
-                if (Config.Debug) {
-                    getLogger().info("on a turret");
-                }
-
-                this.demount(player, player.getLocation());
-            }
-
-            if (event.getEntity().hasMetadata("isTurretBullet") && player.isGliding()) {
-                player.setGliding(false);
-                player.setSprinting(false);
-            }
-        }
-
     }
 
     @EventHandler
