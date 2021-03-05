@@ -5,6 +5,8 @@ import com.sk89q.worldguard.protection.managers.RegionManager;
 import java.util.*;
 
 import com.snowleopard1863.APTurrets.config.Config;
+import com.snowleopard1863.APTurrets.exception.ArrowLaunchException;
+import com.snowleopard1863.APTurrets.task.ArrowTracerTask;
 import net.countercraft.movecraft.craft.Craft;
 import net.countercraft.movecraft.craft.CraftManager;
 import net.countercraft.movecraft.MovecraftLocation;
@@ -44,9 +46,9 @@ import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
 public class TurretsMain extends JavaPlugin implements Listener {
-    private final ArrayList<Player> onTurrets = new ArrayList<>();
-    private final ArrayList<Player> reloading = new ArrayList<>();
-    private final ArrayList<Arrow> tracedArrows = new ArrayList<>();
+    public final ArrayList<Player> onTurrets = new ArrayList<>();
+    public final ArrayList<Player> reloading = new ArrayList<>();
+    public final ArrayList<Arrow> tracedArrows = new ArrayList<>();
     private static Economy economy;
     private static CraftManager craftManager;
 
@@ -108,23 +110,7 @@ public class TurretsMain extends JavaPlugin implements Listener {
         }
 
         if (Config.UseParticleTracers) {
-            getServer().getScheduler().scheduleSyncRepeatingTask(this, new Runnable() {
-                public void run() {
-                    Iterator<Arrow> iterator = tracedArrows.iterator();
-
-                    while(iterator.hasNext()) {
-                        Arrow a = iterator.next();
-                        if (a.isOnGround() || a.isDead() || a.getTicksLived() > 100) {
-                            a.removeMetadata("tracer", TurretsMain.getInstance());
-                            iterator.remove();
-                            a.remove();
-                        }
-
-                        World world = a.getWorld();
-                        world.spawnParticle(Particle.CRIT, a.getLocation(), 1, 0.0D, 0.0D, 0.0D, 0.0D);
-                    }
-                }
-            }, 0L, 0L);
+            getServer().getScheduler().scheduleSyncRepeatingTask(this, new ArrowTracerTask(), 0L, 0L);
         }
 
         getServer().getPluginManager().registerEvents(this, this);
@@ -688,11 +674,6 @@ public class TurretsMain extends JavaPlugin implements Listener {
         return Class.forName("net.minecraft.server." + serverVersion + "." + name);
     }
 
-    private static class ArrowLaunchException extends RuntimeException {
-        public ArrowLaunchException(String message, Throwable cause) {
-            super(message, cause);
-        }
-    }
     static {
         INVENTORY_MATERIALS = new Material[]{Material.CHEST, Material.TRAPPED_CHEST, Material.FURNACE, Material.HOPPER, Material.DROPPER, Material.DISPENSER, Material.BREWING_STAND};
     }
