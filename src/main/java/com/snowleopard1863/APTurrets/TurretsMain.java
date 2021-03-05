@@ -9,6 +9,7 @@ import com.snowleopard1863.APTurrets.exception.ArrowLaunchException;
 import com.snowleopard1863.APTurrets.listener.PlayerInteractEntityListener;
 import com.snowleopard1863.APTurrets.listener.PlayerInteractListener;
 import com.snowleopard1863.APTurrets.listener.PlayerToggleSneakListener;
+import com.snowleopard1863.APTurrets.listener.ProjectileHitListener;
 import com.snowleopard1863.APTurrets.task.ArrowTracerTask;
 import net.countercraft.movecraft.craft.Craft;
 import net.countercraft.movecraft.craft.CraftManager;
@@ -120,6 +121,7 @@ public class TurretsMain extends JavaPlugin implements Listener {
         getServer().getPluginManager().registerEvents(new PlayerInteractEntityListener(), this);
         getServer().getPluginManager().registerEvents(new PlayerInteractListener(), this);
         getServer().getPluginManager().registerEvents(new PlayerToggleSneakListener(), this);
+        getServer().getPluginManager().registerEvents(new ProjectileHitListener(), this);
 
         String packageName = getServer().getClass().getPackage().getName();
         serverVersion = packageName.substring(packageName.lastIndexOf(".") + 1);
@@ -274,26 +276,6 @@ public class TurretsMain extends JavaPlugin implements Listener {
         } catch (Throwable e) {
             throw new ArrowLaunchException("Something went wrong when trying to launch an arrow", e);
         }
-    }
-
-    @EventHandler
-    public void onHit(ProjectileHitEvent event) {
-        // If a bullet hits, play a sound for it and add effects
-        if (event.getEntity() instanceof Arrow) {
-            Arrow arrow = (Arrow)event.getEntity();
-            if (arrow.hasMetadata("isTurretBullet")) {
-                if (Config.Debug) {
-                    getLogger().info("A bullet has landed");
-                }
-
-                Location arrowLoc = arrow.getLocation();
-                World world = event.getEntity().getWorld();
-                Location l = arrowLoc.getBlock().getLocation();
-                arrow.getWorld().playEffect(l, Effect.STEP_SOUND, world.getBlockTypeIdAt(l));
-                world.playEffect(l, Effect.TILE_BREAK, l.subtract(0.0D, 1.0D, 0.0D).getBlock().getTypeId(), 0);
-            }
-        }
-
     }
 
     @EventHandler
