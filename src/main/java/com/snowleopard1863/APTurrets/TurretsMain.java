@@ -1,7 +1,5 @@
 package com.snowleopard1863.APTurrets;
 
-import com.sk89q.worldguard.bukkit.WGBukkit;
-import com.sk89q.worldguard.protection.managers.RegionManager;
 import java.util.*;
 
 import com.snowleopard1863.APTurrets.config.Config;
@@ -18,25 +16,14 @@ import org.bukkit.ChatColor;
 import org.bukkit.Effect;
 import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.Particle;
 import org.bukkit.Sound;
 import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.Sign;
 import org.bukkit.entity.Arrow;
-import org.bukkit.entity.Boat;
-import org.bukkit.entity.Horse;
 import org.bukkit.entity.Player;
-import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
-import org.bukkit.event.block.Action;
-import org.bukkit.event.block.SignChangeEvent;
-import org.bukkit.event.entity.EntityDamageByEntityEvent;
-import org.bukkit.event.entity.EntityDamageEvent;
-import org.bukkit.event.entity.PlayerDeathEvent;
-import org.bukkit.event.entity.ProjectileHitEvent;
-import org.bukkit.event.player.*;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
@@ -50,7 +37,7 @@ public class TurretsMain extends JavaPlugin implements Listener {
     public final ArrayList<Player> onTurrets = new ArrayList<>();
     public final ArrayList<Player> reloading = new ArrayList<>();
     public final ArrayList<Arrow> tracedArrows = new ArrayList<>();
-    private static Economy economy;
+    public static Economy economy;
     private static CraftManager craftManager;
 
     private String serverVersion;
@@ -124,6 +111,7 @@ public class TurretsMain extends JavaPlugin implements Listener {
         getServer().getPluginManager().registerEvents(new PlayerQuitListener(), this);
         getServer().getPluginManager().registerEvents(new PlayerToggleSneakListener(), this);
         getServer().getPluginManager().registerEvents(new ProjectileHitListener(), this);
+        getServer().getPluginManager().registerEvents(new SignChangeListener(), this);
 
         String packageName = getServer().getClass().getPackage().getName();
         serverVersion = packageName.substring(packageName.lastIndexOf(".") + 1);
@@ -145,59 +133,6 @@ public class TurretsMain extends JavaPlugin implements Listener {
         reloading.clear();
         tracedArrows.clear();
         getLogger().info(getDescription().getName() + " v" + getDescription().getVersion() + " has been disabled.");
-    }
-
-    @EventHandler
-    public void eventSignChanged(SignChangeEvent event) {
-        Player player = event.getPlayer();
-        Location location = player.getLocation();
-        RegionManager rm = WGBukkit.getRegionManager(player.getWorld());
-        if ("Mounted".equalsIgnoreCase(event.getLine(0)) && "Gun".equalsIgnoreCase(event.getLine(1))) {
-            if (rm.getApplicableRegions(location).size() <= 0 && !player.hasPermission("ap-turrets.regionoverride")) {
-                // If the player can override regions, place the turret. Otherwise, require them to be in a region
-                this.sendMessage(player, "You must be inside a airspace or region.");
-                event.setCancelled(true);
-                if (Config.Debug) {
-                    getLogger().info("A Mounted Gun sign failed to place");
-                }
-
-                return;
-            }
-
-            if (player.hasPermission("ap-turrets.place")) {
-                // If they're allowed to place a turret, notify them that they have placed a turret and take money from their account
-                if (economy != null) {
-                    if (economy.has(player, Config.CostToPlace)) {
-                        economy.withdrawPlayer(player, Config.CostToPlace);
-                        player.sendMessage(ChatColor.AQUA + "[" + ChatColor.RED + "Mounted Gun" + ChatColor.AQUA + "] " + ChatColor.GOLD + "Mounted Gun Placed!" + ChatColor.GREEN + " $15,000 has been charged to your balance.");
-                        event.setLine(0, "Mounted");
-                        event.setLine(1, "Gun");
-                        if (Config.Debug) {
-                            getLogger().info("A Mounted Gun sign has been place");
-                        }
-                    } else {
-                        if (Config.Debug) {
-                            getLogger().info("A Mounted Gun sign failed to place");
-                        }
-
-                        this.sendMessage(player, "You Don't Have Enough Money To Place A Turret. Cost To Place: " + ChatColor.RED + Config.CostToPlace);
-                    }
-                } else {
-                    this.sendMessage(player, "Turret Created!");
-                    if (Config.Debug) {
-                        getLogger().info("A Mounted Gun sign has been placed for free due to no vault instalation");
-                    }
-                }
-            } else {
-                if (Config.Debug) {
-                    getLogger().info("A Mounted Gun sign failed to place");
-                }
-
-                event.setCancelled(true);
-                this.sendMessage(player, ChatColor.RED + "ERROR " + ChatColor.WHITE + "You Must Be Donor To Place Mounted Guns!");
-            }
-        }
-
     }
 
     public void fireTurret(final Player player) {
