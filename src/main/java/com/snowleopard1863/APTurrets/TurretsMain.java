@@ -8,6 +8,7 @@ import com.snowleopard1863.APTurrets.config.Config;
 import com.snowleopard1863.APTurrets.exception.ArrowLaunchException;
 import com.snowleopard1863.APTurrets.listener.PlayerInteractEntityListener;
 import com.snowleopard1863.APTurrets.listener.PlayerInteractListener;
+import com.snowleopard1863.APTurrets.listener.PlayerToggleSneakListener;
 import com.snowleopard1863.APTurrets.task.ArrowTracerTask;
 import net.countercraft.movecraft.craft.Craft;
 import net.countercraft.movecraft.craft.CraftManager;
@@ -118,6 +119,7 @@ public class TurretsMain extends JavaPlugin implements Listener {
         getServer().getPluginManager().registerEvents(this, this);
         getServer().getPluginManager().registerEvents(new PlayerInteractEntityListener(), this);
         getServer().getPluginManager().registerEvents(new PlayerInteractListener(), this);
+        getServer().getPluginManager().registerEvents(new PlayerToggleSneakListener(), this);
 
         String packageName = getServer().getClass().getPackage().getName();
         serverVersion = packageName.substring(packageName.lastIndexOf(".") + 1);
@@ -272,23 +274,6 @@ public class TurretsMain extends JavaPlugin implements Listener {
         } catch (Throwable e) {
             throw new ArrowLaunchException("Something went wrong when trying to launch an arrow", e);
         }
-    }
-
-    @EventHandler
-    public void onPlayerToggleSneakEvent(PlayerToggleSneakEvent event) {
-        // If the player sneaks, demount them from the turret
-        Player player = event.getPlayer();
-        if (Config.Debug) {
-            getLogger().info(player + " sneaked");
-        }
-
-        if (player.isSneaking() && this.onTurrets.contains(player)) {
-            this.demount(player, player.getLocation());
-            if (Config.Debug) {
-                getLogger().info(player + " got out of their turret");
-            }
-        }
-
     }
 
     @EventHandler
