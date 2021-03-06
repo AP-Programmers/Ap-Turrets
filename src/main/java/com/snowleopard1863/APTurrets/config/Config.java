@@ -1,5 +1,8 @@
 package com.snowleopard1863.APTurrets.config;
 
+import org.bukkit.Material;
+import org.bukkit.inventory.ItemStack;
+
 public class Config {
     public static boolean Debug = false;
     public static boolean TakeFromInventory = true;
@@ -12,4 +15,6 @@ public class Config {
     public static int KnockbackStrength = 2;
     public static boolean UseParticleTracers = true;
     public static double DelayBetweenShots = 0.2D;
+
+    public static ItemStack TurretAmmo = new ItemStack(Material.ARROW, 1);
 }

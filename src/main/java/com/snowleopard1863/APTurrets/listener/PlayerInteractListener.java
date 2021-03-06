@@ -79,7 +79,7 @@ public class PlayerInteractListener implements Listener {
             return;
 
         // Fires the turret and keeps them from interacting with something else and placing the button accidentally
-        TurretsMain.getInstance().fireTurret(player);
+        TurretsMain.getInstance().getTurretManager().fire(player);
         event.setCancelled(true);
     }
 }

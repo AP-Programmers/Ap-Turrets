@@ -14,9 +14,9 @@ public class PlayerToggleSneakListener implements Listener {
         if(!player.isSneaking())
             return;
 
-        if(!TurretsMain.getInstance().onTurrets.contains(player))
+        if(!TurretsMain.getInstance().getTurretManager().isOnTurret(player))
             return;
 
-        TurretsMain.getInstance().demount(player, player.getLocation());
+        TurretsMain.getInstance().getTurretManager().demount(player, player.getLocation());
     }
 }

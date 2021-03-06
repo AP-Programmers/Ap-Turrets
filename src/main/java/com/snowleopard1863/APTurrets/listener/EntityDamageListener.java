@@ -14,8 +14,8 @@ public class EntityDamageListener implements Listener {
             return;
 
         Player player = (Player) event.getEntity();
-        if (TurretsMain.getInstance().onTurrets.contains(player))
-            TurretsMain.getInstance().demount(player, player.getLocation());
+        if (TurretsMain.getInstance().getTurretManager().isOnTurret(player))
+            TurretsMain.getInstance().getTurretManager().demount(player, player.getLocation());
 
         if (!event.getEntity().hasMetadata("isTurretBullet"))
             return;

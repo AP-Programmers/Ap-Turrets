@@ -8,7 +8,7 @@ import org.bukkit.event.entity.PlayerDeathEvent;
 public class PlayerDeathListener implements Listener {
     @EventHandler
     public void onPlayerDeath(PlayerDeathEvent e) {
-        if (!TurretsMain.getInstance().onTurrets.contains(e.getEntity().getKiller()))
+        if (!TurretsMain.getInstance().getTurretManager().isOnTurret(e.getEntity().getKiller()))
             return;
 
         e.setDeathMessage(e.getEntity().getDisplayName() + " was gunned down by " + e.getEntity().getKiller().getDisplayName() + ".");

@@ -12,12 +12,12 @@ public class PlayerInteractEntityListener implements Listener {
     @EventHandler
     public void onEntityInteract(PlayerInteractEntityEvent e) {
         Player p = e.getPlayer();
-        if(!TurretsMain.getInstance().onTurrets.contains(p))
+        if(!TurretsMain.getInstance().getTurretManager().isOnTurret(p))
             return;
         if(!(e.getRightClicked() instanceof Boat || e.getRightClicked() instanceof Horse))
             return;
 
         // If someone tries to hop on a horse or boat while already on a gun, demount them from the gun
-        TurretsMain.getInstance().demount(p, p.getLocation());
+        TurretsMain.getInstance().getTurretManager().demount(p, p.getLocation());
     }
 }
