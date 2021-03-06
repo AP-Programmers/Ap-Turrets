@@ -30,17 +30,17 @@ public class SignChangeListener implements Listener {
             player.sendMessage(ChatColor.RED + "ERROR " + ChatColor.WHITE + "You Must Be Donor To Place Mounted Guns!");
         }
 
-        if(TurretsMain.economy == null) {
+        if(TurretsMain.getInstance().getEconomy() == null) {
             player.sendMessage("Turret Created!");
         }
 
         // If they're allowed to place a turret, notify them that they have placed a turret and take money from their account
-        if (!TurretsMain.economy.has(player, Config.CostToPlace)) {
+        if (!TurretsMain.getInstance().getEconomy().has(player, Config.CostToPlace)) {
             player.sendMessage("You Don't Have Enough Money To Place A Turret. Cost To Place: " + ChatColor.RED + Config.CostToPlace);
             event.setCancelled(true);
         }
 
-        TurretsMain.economy.withdrawPlayer(player, Config.CostToPlace);
+        TurretsMain.getInstance().getEconomy().withdrawPlayer(player, Config.CostToPlace);
         player.sendMessage(ChatColor.AQUA + "[" + ChatColor.RED + "Mounted Gun" + ChatColor.AQUA + "] " + ChatColor.GOLD + "Mounted Gun Placed!" + ChatColor.GREEN + " $15,000 has been charged to your balance.");
         event.setLine(0, "Mounted");
         event.setLine(1, "Gun");
