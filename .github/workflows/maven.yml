@@ -57,9 +57,6 @@ jobs:
     - name: Build Ap-Turrets
       run: mvn -B package -T 1C --file AP-Turrets/pom.xml
 
-    - run: ls
-    - run: ls AP-Turrets
-    - run: ls AP-Turrets/target
     - name: Stage jar
       run: mkdir staging && cp AP-Turrets/target/APTurrets.jar staging
     - name: Rename jar
