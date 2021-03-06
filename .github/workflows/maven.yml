@@ -58,11 +58,11 @@ jobs:
       run: mvn -B package -T 1C --file AP-Turrets/pom.xml
 
     - name: Stage jar
-      run: mkdir staging && cp AP-Turrets/target/APTurrets.jar staging
+      run: mkdir staging && cp AP-Turrets/target/AP-Turrets.jar staging
     - name: Rename jar
-      run: mv staging/APTurrets.jar staging/APTurrets_$GITHUB_SHA.jar
+      run: mv staging/AP-Turrets.jar staging/AP-Turrets_$GITHUB_SHA.jar
     - name: Upload jar
       uses: actions/upload-artifact@v2
       with:
-        name: APTurrets_Dev-Build
-        path: staging/APTurrets_*.jar
+        name: AP-Turrets_Dev-Build
+        path: staging/AP-Turrets_*.jar
