@@ -2,7 +2,6 @@ package com.snowleopard1863.APTurrets;
 
 import com.snowleopard1863.APTurrets.config.Config;
 import com.snowleopard1863.APTurrets.exception.ArrowLaunchException;
-import net.countercraft.movecraft.craft.Craft;
 import net.countercraft.movecraft.craft.CraftManager;
 import org.bukkit.*;
 import org.bukkit.block.Block;
