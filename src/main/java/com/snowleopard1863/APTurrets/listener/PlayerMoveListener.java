@@ -9,7 +9,7 @@ import org.bukkit.event.player.PlayerMoveEvent;
 public class PlayerMoveListener implements Listener {
     @EventHandler
     public void onPlayerMove(PlayerMoveEvent e){
-        if (TurretsMain.getInstance().getTurretManager().isOnTurret(e.getPlayer()))
+        if (!TurretsMain.getInstance().getTurretManager().isOnTurret(e.getPlayer()))
             return;
 
         Location locationPre = e.getFrom();

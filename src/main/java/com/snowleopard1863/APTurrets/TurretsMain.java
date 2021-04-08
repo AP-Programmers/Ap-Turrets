@@ -33,11 +33,14 @@ public class TurretsMain extends JavaPlugin implements Listener {
         Config.RequireAmmo = getConfig().getBoolean("RequireAmmo", true);
         Config.CostToPlace = getConfig().getDouble("CostToPlace", 15000.00D);
         Config.KnockbackStrength = getConfig().getInt("KnockbackStrength", 2);
-        Config.IncindiaryChance = getConfig().getDouble("ncindiaryChance", 0.1D);
+        Config.IncindiaryChance = getConfig().getDouble("IncindiaryChance", 0.1D);
         Config.Damage = getConfig().getDouble("Damage", 2.5D);
         Config.ArrowVelocity = getConfig().getDouble("ArrowVelocity", 4.0D);
         Config.UseParticleTracers = getConfig().getBoolean("UseParticleTracers", true);
         Config.DelayBetweenShots = getConfig().getDouble("DelayBetweenShots", 0.2D);
+        Config.DoRaycast = getConfig().getBoolean("DoRaycast", false);
+        Config.RaycastRadians = getConfig().getDouble("RaycastAngle", 5.0D) / 180.0 * Math.PI;
+        Config.BreakElytra = getConfig().getBoolean("BreakElytra", false);
 
 
         if (getServer().getPluginManager().getPlugin("Vault") != null) {

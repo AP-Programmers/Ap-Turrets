@@ -12,9 +12,11 @@ import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.PlayerInventory;
 import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
+import org.bukkit.util.Vector;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
@@ -94,6 +96,9 @@ public class TurretManager {
                 player.getWorld().playSound(player.getLocation(), Sound.BLOCK_DISPENSER_FAIL, 1.0F, 2.0F);
         }
 
+        if(runRaycast(player))
+            return;
+
         Arrow arrow = launchArrow(player);
 
         if(Config.UseParticleTracers)
@@ -105,6 +110,7 @@ public class TurretManager {
         world.playSound(player.getLocation(), Sound.ENTITY_FIREWORK_BLAST, 1.0F, 2.0F);
         world.playEffect(player.getLocation(), Effect.MOBSPAWNER_FLAMES, 0);
     }
+
 
     @NotNull
     private Arrow launchArrow(Player player) {
@@ -158,7 +164,67 @@ public class TurretManager {
         return false;
     }
 
-    public static Block getBlockSignAttachedTo(Block block) {
+    private void startReloading(final Player player) {
+        reloading.add(player);
+        Bukkit.getScheduler().scheduleSyncDelayedTask(TurretsMain.getInstance(), new Runnable() {
+            @Override
+            public void run() {
+                reloading.remove(player);
+            }
+        }, ((int) (Config.DelayBetweenShots * 10.0)));
+    }
+
+    private boolean runRaycast(@NotNull Player shooter) {
+        Location shooterLoc = shooter.getLocation();
+        Vector shooterVector = shooterLoc.getDirection();
+
+        for(Player p : Bukkit.getOnlinePlayers()) {
+            if(p == null || !p.isOnline() || p == shooter || p.getWorld() != shooter.getWorld())
+                continue;
+
+            PlayerInventory inv = p.getInventory();
+            if(inv == null)
+                continue;
+
+           ItemStack chestplate = inv.getChestplate();
+            if(chestplate == null || chestplate.getType() != Material.ELYTRA)
+                continue;
+
+            Vector v = p.getLocation().subtract(shooterLoc).toVector();
+            if(v.angle(shooterVector) > Config.RaycastRadians)
+                continue;
+
+            if(p.getLocation().distanceSquared(shooterLoc) > Bukkit.getServer().getViewDistance() * Bukkit.getServer().getViewDistance() * 256L)
+                continue;
+
+            // Time to hit them!
+            if(Config.BreakElytra)
+                chestplate.setDurability((short) 431);
+
+            p.setGliding(false);
+            p.setSprinting(false);
+            p.damage(Config.Damage, shooter);
+
+            World world = shooter.getWorld();
+            world.playSound(shooter.getLocation(), Sound.ENTITY_BLAZE_HURT, 1.5F, 2.0F);
+            world.playEffect(shooter.getLocation(), Effect.MOBSPAWNER_FLAMES, 0);
+
+            return true;
+        }
+        return false;
+    }
+
+    public boolean isOnTurret(Player p) {
+        return onTurrets.contains(p);
+    }
+
+    public boolean isReloading(Player p) {
+        return reloading.contains(p);
+    }
+
+
+    @Nullable
+    public static Block getBlockSignAttachedTo(@NotNull Block block) {
         // Get the block the sign is attached to
         if (block.getType().equals(Material.SIGN_POST)) {
             return block.getRelative(BlockFace.DOWN);
@@ -179,23 +245,5 @@ public class TurretManager {
 
             return null;
         }
-    }
-
-    private void startReloading(final Player player) {
-        reloading.add(player);
-        Bukkit.getScheduler().scheduleSyncDelayedTask(TurretsMain.getInstance(), new Runnable() {
-            @Override
-            public void run() {
-                reloading.remove(player);
-            }
-        }, ((int) (Config.DelayBetweenShots * 10.0)));
-    }
-
-    public boolean isOnTurret(Player p) {
-        return onTurrets.contains(p);
-    }
-
-    public boolean isReloading(Player p) {
-        return reloading.contains(p);
     }
 }

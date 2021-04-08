@@ -38,6 +38,7 @@ public class SignChangeListener implements Listener {
         if (!TurretsMain.getInstance().getEconomy().has(player, Config.CostToPlace)) {
             player.sendMessage("You Don't Have Enough Money To Place A Turret. Cost To Place: " + ChatColor.RED + Config.CostToPlace);
             event.setCancelled(true);
+            return;
         }
 
         TurretsMain.getInstance().getEconomy().withdrawPlayer(player, Config.CostToPlace);

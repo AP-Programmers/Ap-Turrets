@@ -15,6 +15,9 @@ public class Config {
     public static int KnockbackStrength = 2;
     public static boolean UseParticleTracers = true;
     public static double DelayBetweenShots = 0.2D;
+    public static boolean DoRaycast = false;
+    public static double RaycastRadians = 2.0 / 180.0 * Math.PI;
+    public static boolean BreakElytra = false;
 
     public static ItemStack TurretAmmo = new ItemStack(Material.ARROW, 1);
 }

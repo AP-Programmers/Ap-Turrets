@@ -5,13 +5,14 @@ import com.snowleopard1863.APTurrets.config.Config;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.Material;
-import org.bukkit.block.Block;
+import org.bukkit.block.BlockFace;
 import org.bukkit.block.Sign;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
+import org.jetbrains.annotations.NotNull;
 
 public class PlayerInteractListener implements Listener {
     @EventHandler
@@ -27,7 +28,7 @@ public class PlayerInteractListener implements Listener {
         }
     }
 
-    private void leftClickBlock(PlayerInteractEvent event) {
+    private void leftClickBlock(@NotNull PlayerInteractEvent event) {
         if (event.getPlayer().getInventory().getItemInMainHand().getType() != Material.STONE_BUTTON)
             return;
 
@@ -43,22 +44,21 @@ public class PlayerInteractListener implements Listener {
         event.setCancelled(true);
     }
 
-    private void rightClickBlock(PlayerInteractEvent event) {
-        if (event.getClickedBlock().getType() != Material.SIGN_POST || event.getClickedBlock().getType() != Material.WALL_SIGN || event.getClickedBlock().getType() != Material.SIGN)
+    private void rightClickBlock(@NotNull PlayerInteractEvent event) {
+        if (event.getClickedBlock().getType() != Material.SIGN_POST && event.getClickedBlock().getType() != Material.WALL_SIGN && event.getClickedBlock().getType() != Material.SIGN)
             return;
 
         Sign sign = (Sign) event.getClickedBlock().getState();
-        if (sign.getLine(0).equalsIgnoreCase("Mounted") && sign.getLine(1).equalsIgnoreCase("Gun"))
+        if (!sign.getLine(0).equalsIgnoreCase("Mounted") || !sign.getLine(1).equalsIgnoreCase("Gun"))
             return;
 
-            Block b = sign.getLocation().subtract(0.0D, 1.0D, 0.0D).getBlock();
-            if (b.getType() == Material.SLIME_BLOCK)
-                return;
+        if (event.getClickedBlock().getRelative(BlockFace.DOWN).getType() == Material.SLIME_BLOCK)
+            return;
 
-            Location signPos = event.getClickedBlock().getLocation();
-            signPos.setPitch(event.getPlayer().getLocation().getPitch());
-            signPos.setDirection(event.getPlayer().getVelocity());
-            TurretsMain.getInstance().getTurretManager().mount(event.getPlayer(), signPos);
+        Location signPos = event.getClickedBlock().getLocation();
+        signPos.setPitch(event.getPlayer().getLocation().getPitch());
+        signPos.setDirection(event.getPlayer().getVelocity());
+        TurretsMain.getInstance().getTurretManager().mount(event.getPlayer(), signPos);
     }
 
     private void rightClick(PlayerInteractEvent event) {

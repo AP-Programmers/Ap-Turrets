@@ -9,3 +9,6 @@ ArrowVelocity: 4.0 # Velocity for arrows to go
 KnockbackStrength: 2 # Knockback strength of the arrows
 UseParticleTracers: true # Whether to use tracers
 DelayBetweenShots: 0.2 # Delay between each shot
+DoRaycast: false # Do raycast instant shots for elytra fliers
+RaycastAngle: 5.0 # Angle for the raycast cone of aiming
+BreakElytra: false # Break elytra on raycast?
