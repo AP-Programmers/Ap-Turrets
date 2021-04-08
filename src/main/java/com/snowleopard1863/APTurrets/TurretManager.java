@@ -194,7 +194,15 @@ public class TurretManager {
             if(v.angle(shooterVector) > Config.RaycastRadians)
                 continue;
 
-            if(p.getLocation().distanceSquared(shooterLoc) > Bukkit.getServer().getViewDistance() * Bukkit.getServer().getViewDistance() * 256L)
+            int maxDistance = Bukkit.getServer().getViewDistance() * 16;
+            maxDistance *= maxDistance;
+
+            double distSquared = p.getLocation().distanceSquared(shooterLoc);
+            if(distSquared > maxDistance)
+                continue;
+
+            Block targetBlock = shooter.getTargetBlock(new HashSet<>(), maxDistance);
+            if(targetBlock.getType().isSolid() && targetBlock.getLocation().distanceSquared(shooterLoc) < distSquared)
                 continue;
 
             // Time to hit them!
