@@ -3,6 +3,7 @@ package com.snowleopard1863.APTurrets;
 import com.snowleopard1863.APTurrets.config.Config;
 import com.snowleopard1863.APTurrets.exception.ArrowLaunchException;
 import net.countercraft.movecraft.craft.CraftManager;
+import net.countercraft.movecraft.worldguard.MovecraftWorldGuard;
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
@@ -201,8 +202,11 @@ public class TurretManager {
             if(distSquared > maxDistance)
                 continue;
 
-            Block targetBlock = shooter.getTargetBlock(new HashSet<>(), maxDistance);
-            if(targetBlock.getType().isSolid() && targetBlock.getLocation().distanceSquared(shooterLoc) < distSquared)
+            Block targetBlock = shooter.getTargetBlock(null, maxDistance);
+            if(targetBlock.getLocation().distanceSquared(shooterLoc) < distSquared)
+                continue;
+
+            if(!MovecraftWorldGuard.getInstance().getWGUtils().isPVPAllowed(p.getLocation()))
                 continue;
 
             // Time to hit them!

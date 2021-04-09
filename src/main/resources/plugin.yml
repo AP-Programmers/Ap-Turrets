@@ -2,7 +2,7 @@ main: com.snowleopard1863.APTurrets.TurretsMain
 version: ${project.version}
 name: APTurrets
 authors: [TylerS1066, Snowleopard1863, cccm5, MrUniverse_]
-depend: [Movecraft, WorldGuard, Vault, WorldEdit]
+depend: [Movecraft, Movecraft-WorldGuard, Vault]
 
 permissions:
   ap-turrets.use:

@@ -1,8 +1,8 @@
 package com.snowleopard1863.APTurrets.listener;
 
-import com.sk89q.worldguard.bukkit.WGBukkit;
 import com.snowleopard1863.APTurrets.TurretsMain;
 import com.snowleopard1863.APTurrets.config.Config;
+import net.countercraft.movecraft.worldguard.MovecraftWorldGuard;
 import org.bukkit.ChatColor;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
@@ -18,7 +18,7 @@ public class SignChangeListener implements Listener {
 
         Player player = event.getPlayer();
         Location location = player.getLocation();
-        if (WGBukkit.getRegionManager(player.getWorld()).getApplicableRegions(location).size() <= 0 && !player.hasPermission("ap-turrets.regionoverride")) {
+        if (MovecraftWorldGuard.getInstance().getWGUtils().isInRegion(location) && !player.hasPermission("ap-turrets.regionoverride")) {
             // If the player can override regions, place the turret. Otherwise, require them to be in a region
             player.sendMessage("You must be inside a airspace or region.");
             event.setCancelled(true);
