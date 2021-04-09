@@ -195,14 +195,11 @@ public class TurretManager {
             if(v.angle(shooterVector) > Config.RaycastRadians)
                 continue;
 
-            int maxDistance = Bukkit.getServer().getViewDistance() * 16;
-            maxDistance *= maxDistance;
-
             double distSquared = p.getLocation().distanceSquared(shooterLoc);
-            if(distSquared > maxDistance)
+            if(distSquared > Config.RaycastRange * Config.RaycastRange)
                 continue;
 
-            Block targetBlock = shooter.getTargetBlock(null, maxDistance);
+            Block targetBlock = shooter.getTargetBlock(null, Config.RaycastRange);
             if(targetBlock.getLocation().distanceSquared(shooterLoc) < distSquared)
                 continue;
 
@@ -210,7 +207,7 @@ public class TurretManager {
                 continue;
 
             // Time to hit them!
-            if(Config.BreakElytra)
+            if(Config.RaycastBreakElytra)
                 chestplate.setDurability((short) 431);
 
             p.setGliding(false);

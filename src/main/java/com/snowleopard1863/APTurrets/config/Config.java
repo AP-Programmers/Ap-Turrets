@@ -17,7 +17,8 @@ public class Config {
     public static double DelayBetweenShots = 0.2D;
     public static boolean DoRaycast = false;
     public static double RaycastRadians = 2.0 / 180.0 * Math.PI;
-    public static boolean BreakElytra = false;
+    public static boolean RaycastBreakElytra = false;
+    public static int RaycastRange = 160;
 
     public static ItemStack TurretAmmo = new ItemStack(Material.ARROW, 1);
 }

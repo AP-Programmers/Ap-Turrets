@@ -11,4 +11,5 @@ UseParticleTracers: true # Whether to use tracers
 DelayBetweenShots: 0.2 # Delay between each shot
 DoRaycast: false # Do raycast instant shots for elytra fliers
 RaycastAngle: 5.0 # Angle for the raycast cone of aiming
-BreakElytra: false # Break elytra on raycast?
+RaycastBreakElytra: false # Break elytra on raycast?
+RaycastRange: 160 # Raycast max range

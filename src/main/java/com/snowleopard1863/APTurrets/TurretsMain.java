@@ -40,7 +40,8 @@ public class TurretsMain extends JavaPlugin implements Listener {
         Config.DelayBetweenShots = getConfig().getDouble("DelayBetweenShots", 0.2D);
         Config.DoRaycast = getConfig().getBoolean("DoRaycast", false);
         Config.RaycastRadians = getConfig().getDouble("RaycastAngle", 5.0D) / 180.0 * Math.PI;
-        Config.BreakElytra = getConfig().getBoolean("BreakElytra", false);
+        Config.RaycastBreakElytra = getConfig().getBoolean("RaycastBreakElytra", false);
+        Config.RaycastRange = getConfig().getInt("RaycastRange", 160);
 
 
         if (getServer().getPluginManager().getPlugin("Vault") != null) {
