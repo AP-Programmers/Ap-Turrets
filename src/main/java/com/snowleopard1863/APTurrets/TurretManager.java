@@ -183,27 +183,34 @@ public class TurretManager {
             if(p == null || !p.isOnline() || p == shooter || p.getWorld() != shooter.getWorld())
                 continue;
 
+            // Check for elytra
             PlayerInventory inv = p.getInventory();
             if(inv == null)
                 continue;
-
            ItemStack chestplate = inv.getChestplate();
             if(chestplate == null || chestplate.getType() != Material.ELYTRA)
                 continue;
 
+            // Check for angle
             Vector v = p.getLocation().subtract(shooterLoc).toVector();
             if(v.angle(shooterVector) > Config.RaycastRadians)
                 continue;
 
+            // Check for distance
             double distSquared = p.getLocation().distanceSquared(shooterLoc);
             if(distSquared > Config.RaycastRange * Config.RaycastRange)
                 continue;
 
+            // Check for WG PVP flag
+            if(!MovecraftWorldGuard.getInstance().getWGUtils().isPVPAllowed(p.getLocation()))
+                continue;
+
+            // Check for block directly between
             Block targetBlock = shooter.getTargetBlock(null, Config.RaycastRange);
             if(targetBlock.getLocation().distanceSquared(shooterLoc) < distSquared)
                 continue;
 
-            if(!MovecraftWorldGuard.getInstance().getWGUtils().isPVPAllowed(p.getLocation()))
+            if(!isClearRaycast(shooterLoc, v, Math.sqrt(distSquared)))
                 continue;
 
             // Time to hit them!
@@ -221,6 +228,14 @@ public class TurretManager {
             return true;
         }
         return false;
+    }
+
+    private boolean isClearRaycast(Location source, Vector v, double distance) {
+        for(double d = 0; d < distance; d += 0.5D) {
+            if(source.add(v.multiply(d)).getBlock().getType() != Material.AIR)
+                return false;
+        }
+        return true;
     }
 
     public boolean isOnTurret(Player p) {
