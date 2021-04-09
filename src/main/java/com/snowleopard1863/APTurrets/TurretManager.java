@@ -210,9 +210,6 @@ public class TurretManager {
             if(targetBlock.getLocation().distanceSquared(shooterLoc) < distSquared)
                 continue;
 
-            if(!isClearRaycast(shooterLoc, v, Math.sqrt(distSquared)))
-                continue;
-
             // Time to hit them!
             if(Config.RaycastBreakElytra)
                 chestplate.setDurability((short) 431);
@@ -228,14 +225,6 @@ public class TurretManager {
             return true;
         }
         return false;
-    }
-
-    private boolean isClearRaycast(Location source, Vector v, double distance) {
-        for(double d = 0; d < distance; d += 0.5D) {
-            if(source.add(v.multiply(d)).getBlock().getType() != Material.AIR)
-                return false;
-        }
-        return true;
     }
 
     public boolean isOnTurret(Player p) {
