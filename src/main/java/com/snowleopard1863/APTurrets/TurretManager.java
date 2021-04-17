@@ -8,6 +8,9 @@ import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
 import org.bukkit.block.Sign;
+import org.bukkit.block.data.BlockData;
+import org.bukkit.block.data.Directional;
+import org.bukkit.block.data.Rotatable;
 import org.bukkit.entity.Arrow;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
@@ -41,7 +44,7 @@ public class TurretManager {
     }
 
     public void mount(Player player, @NotNull Location signPos) {
-        if (signPos.getBlock().getType() != Material.SIGN && signPos.getBlock().getType() != Material.SIGN_POST && signPos.getBlock().getType() != Material.WALL_SIGN)
+        if (!signPos.getBlock().getType().name().contains("SIGN"))
             return;
 
         if (onTurrets.contains(player)) {
@@ -69,7 +72,7 @@ public class TurretManager {
         reloading.remove(player);
 
         if(signPos != null) {
-            if (signPos.getBlock().getType() == Material.SIGN || signPos.getBlock().getType() == Material.SIGN_POST || signPos.getBlock().getType() == Material.WALL_SIGN) {
+            if (signPos.getBlock().getType().name().contains("SIGN")) {
                 Sign sign = (Sign) signPos.getBlock().getState();
                 sign.setLine(2, "");
                 sign.update();
@@ -108,7 +111,7 @@ public class TurretManager {
             arrow.setCritical(true);
 
         World world = player.getWorld();
-        world.playSound(player.getLocation(), Sound.ENTITY_FIREWORK_BLAST, 1.0F, 2.0F);
+        world.playSound(player.getLocation(), Sound.ENTITY_FIREWORK_ROCKET_BLAST, 1.0F, 2.0F);
         world.playEffect(player.getLocation(), Effect.MOBSPAWNER_FLAMES, 0);
     }
 
@@ -144,7 +147,7 @@ public class TurretManager {
     private boolean takeAmmo(Player player) {
         if(Config.TakeFromChest && CraftManager.getInstance() != null) {
             Block signBlock = player.getLocation().getBlock();
-            if (signBlock.getType() == Material.WALL_SIGN || signBlock.getType() == Material.SIGN_POST) {
+            if (signBlock.getType().name().contains("SIGN")) {
                 Block adjacentBlock = getBlockSignAttachedTo(signBlock);
                 if(adjacentBlock instanceof InventoryHolder) {
                     Inventory i = ((InventoryHolder) adjacentBlock.getState()).getInventory();
@@ -238,25 +241,13 @@ public class TurretManager {
 
     @Nullable
     public static Block getBlockSignAttachedTo(@NotNull Block block) {
-        // Get the block the sign is attached to
-        if (block.getType().equals(Material.SIGN_POST)) {
-            return block.getRelative(BlockFace.DOWN);
+        BlockData data = block.getState().getBlockData();
+        if(data instanceof Rotatable) {
+            return block.getRelative(((Rotatable) data).getRotation());
         }
-        else {
-            if (block.getType().equals(Material.WALL_SIGN)) {
-                switch (block.getData()) {
-                    case 2:
-                        return block.getRelative(BlockFace.SOUTH);
-                    case 3:
-                        return block.getRelative(BlockFace.NORTH);
-                    case 4:
-                        return block.getRelative(BlockFace.EAST);
-                    case 5:
-                        return block.getRelative(BlockFace.WEST);
-                }
-            }
-
-            return null;
+        if(data instanceof Directional) {
+            return block.getRelative(((Directional) data).getFacing());
         }
+        return null;
     }
 }

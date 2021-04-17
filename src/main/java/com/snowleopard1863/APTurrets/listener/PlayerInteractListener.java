@@ -32,7 +32,8 @@ public class PlayerInteractListener implements Listener {
         if (event.getPlayer().getInventory().getItemInMainHand().getType() != Material.STONE_BUTTON)
             return;
 
-        if(event.getClickedBlock().getType() != Material.SIGN_POST || event.getClickedBlock().getType() != Material.WALL_SIGN || event.getClickedBlock().getType() != Material.SIGN)
+        Material type = event.getClickedBlock().getType();
+        if(!type.name().contains("SIGN"))
             return;
 
         Sign sign = (Sign) event.getClickedBlock().getState();
@@ -45,7 +46,8 @@ public class PlayerInteractListener implements Listener {
     }
 
     private void rightClickBlock(@NotNull PlayerInteractEvent event) {
-        if (event.getClickedBlock().getType() != Material.SIGN_POST && event.getClickedBlock().getType() != Material.WALL_SIGN && event.getClickedBlock().getType() != Material.SIGN)
+        Material type = event.getClickedBlock().getType();
+        if(!type.name().contains("SIGN"))
             return;
 
         Sign sign = (Sign) event.getClickedBlock().getState();
