@@ -1,6 +1,7 @@
 main: com.snowleopard1863.APTurrets.TurretsMain
 version: ${project.version}
 name: APTurrets
+api-version: 1.14
 authors: [TylerS1066, Snowleopard1863, cccm5, MrUniverse_]
 depend: [Movecraft, Movecraft-WorldGuard, Vault]
 
