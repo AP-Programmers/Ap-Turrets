@@ -13,7 +13,7 @@ import org.bukkit.event.block.SignChangeEvent;
 public class SignChangeListener implements Listener {
     @EventHandler
     public void eventSignChanged(SignChangeEvent event) {
-        if(!event.getLine(0).equalsIgnoreCase("Mounted") || !event.getLine(1).equalsIgnoreCase("Gun"))
+        if(!ChatColor.stripColor(event.getLine(0)).equalsIgnoreCase("Mounted") || !ChatColor.stripColor(event.getLine(1)).equalsIgnoreCase("Gun"))
             return;
 
         Player player = event.getPlayer();
