@@ -1,9 +1,12 @@
 package com.snowleopard1863.APTurrets;
 
+import com.sk89q.worldguard.protection.flags.Flags;
 import com.snowleopard1863.APTurrets.config.Config;
 import com.snowleopard1863.APTurrets.exception.ArrowLaunchException;
 import net.countercraft.movecraft.craft.CraftManager;
 import net.countercraft.movecraft.worldguard.MovecraftWorldGuard;
+import net.countercraft.movecraft.worldguard.utils.WorldGuardUtils.State;
+
 import org.bukkit.*;
 import org.bukkit.block.Block;
 import org.bukkit.block.BlockFace;
@@ -205,7 +208,7 @@ public class TurretManager {
                 continue;
 
             // Check for WG PVP flag
-            if(!MovecraftWorldGuard.getInstance().getWGUtils().isPVPAllowed(p.getLocation()))
+            if(MovecraftWorldGuard.getInstance().getWGUtils().getState(null, p.getLocation(), Flags.PVP) == State.DENY)
                 continue;
 
             // Check for block directly between

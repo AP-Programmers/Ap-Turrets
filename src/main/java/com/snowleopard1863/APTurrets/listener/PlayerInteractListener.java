@@ -9,13 +9,14 @@ import org.bukkit.block.BlockFace;
 import org.bukkit.block.Sign;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.jetbrains.annotations.NotNull;
 
 public class PlayerInteractListener implements Listener {
-    @EventHandler
+    @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
     public void onClick(PlayerInteractEvent event) {
         if (event.getAction() == Action.RIGHT_CLICK_AIR || event.getAction() == Action.RIGHT_CLICK_BLOCK) {
             rightClick(event);
@@ -40,8 +41,15 @@ public class PlayerInteractListener implements Listener {
         if (sign.getLine(0).equalsIgnoreCase("Mounted") && sign.getLine(1).equalsIgnoreCase("Gun"))
             return;
 
-        // If a player left clicks the mounted gun with a stone button in hand, show them the statistics for the plugin (Damage, Knockback, Velocity, etc.)
-        event.getPlayer().sendMessage("\n" + ChatColor.GOLD + "Damage/Shot: " + ChatColor.GRAY + Config.Damage + "\n" + ChatColor.GOLD + "Delay Between Shots: " + ChatColor.GRAY + Config.DelayBetweenShots + "\n" + ChatColor.GOLD + "Velocity: " + ChatColor.GRAY + Config.ArrowVelocity + "\n" + ChatColor.GOLD + "Fire Chance: " + ChatColor.GRAY + Config.IncindiaryChance * 100.0D + "%\n" + ChatColor.GOLD + "Knockback: " + ChatColor.GRAY + Config.KnockbackStrength + "\n" + ChatColor.GOLD + "Cost to Place: $" + ChatColor.GRAY + Config.CostToPlace);
+        // If a player left clicks the mounted gun with a stone button in hand,
+        //  show them the statistics for the plugin (Damage, Knockback, Velocity, etc.)
+        event.getPlayer().sendMessage("\n"
+                + ChatColor.GOLD + "Damage/Shot: " + ChatColor.GRAY + Config.Damage + "\n"
+                + ChatColor.GOLD + "Delay Between Shots: " + ChatColor.GRAY + Config.DelayBetweenShots + "\n"
+                + ChatColor.GOLD + "Velocity: " + ChatColor.GRAY + Config.ArrowVelocity + "\n"
+                + ChatColor.GOLD + "Fire Chance: " + ChatColor.GRAY + Config.IncindiaryChance * 100.0D + "%\n"
+                + ChatColor.GOLD + "Knockback: " + ChatColor.GRAY + Config.KnockbackStrength + "\n"
+                + ChatColor.GOLD + "Cost to Place: $" + ChatColor.GRAY + Config.CostToPlace);
         event.setCancelled(true);
     }
 
@@ -68,13 +76,15 @@ public class PlayerInteractListener implements Listener {
         if (!TurretsMain.getInstance().getTurretManager().isOnTurret(player) || !player.hasPermission("ap-turrets.use"))
             return;
 
-        if (player.getInventory().getItemInMainHand().getType() == Material.MILK_BUCKET || player.getInventory().getItemInOffHand().getType() == Material.MILK_BUCKET) {
+        if (player.getInventory().getItemInMainHand().getType() == Material.MILK_BUCKET
+                || player.getInventory().getItemInOffHand().getType() == Material.MILK_BUCKET) {
             // If the player tries to use milk to clear the effects, cancel the event to keep that from happening
             event.setCancelled(true);
             return;
         }
 
-        if (player.getInventory().getItemInMainHand().getType() != Material.STONE_BUTTON && player.getInventory().getItemInOffHand().getType() != Material.STONE_BUTTON)
+        if (player.getInventory().getItemInMainHand().getType() != Material.STONE_BUTTON
+                && player.getInventory().getItemInOffHand().getType() != Material.STONE_BUTTON)
             return;
 
         if (TurretsMain.getInstance().getTurretManager().isReloading(player))
