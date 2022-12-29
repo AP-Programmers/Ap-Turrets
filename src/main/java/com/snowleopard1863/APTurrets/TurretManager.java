@@ -7,9 +7,14 @@ import net.countercraft.movecraft.craft.CraftManager;
 import net.countercraft.movecraft.worldguard.MovecraftWorldGuard;
 import net.countercraft.movecraft.worldguard.utils.WorldGuardUtils.State;
 
-import org.bukkit.*;
+import org.bukkit.Bukkit;
+import org.bukkit.Effect;
+import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.Sound;
+import org.bukkit.Tag;
+import org.bukkit.World;
 import org.bukkit.block.Block;
-import org.bukkit.block.BlockFace;
 import org.bukkit.block.Sign;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.Directional;
@@ -20,6 +25,8 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.InventoryHolder;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.PlayerInventory;
+import org.bukkit.inventory.meta.Damageable;
+import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.metadata.FixedMetadataValue;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
@@ -36,8 +43,8 @@ public class TurretManager {
     private final HashSet<Player> reloading = new HashSet<>();
 
     public void disable() {
-        for(Player p : onTurrets) {
-            if(p == null)
+        for (Player p : onTurrets) {
+            if (p == null)
                 continue;
 
             demount(p, p.getLocation());
@@ -47,7 +54,7 @@ public class TurretManager {
     }
 
     public void mount(Player player, @NotNull Location signPos) {
-        if (!signPos.getBlock().getType().name().contains("SIGN"))
+        if (!Tag.SIGNS.isTagged(signPos.getBlock().getType()))
             return;
 
         if (onTurrets.contains(player)) {
@@ -74,12 +81,10 @@ public class TurretManager {
         onTurrets.remove(player);
         reloading.remove(player);
 
-        if(signPos != null) {
-            if (signPos.getBlock().getType().name().contains("SIGN")) {
-                Sign sign = (Sign) signPos.getBlock().getState();
-                sign.setLine(2, "");
-                sign.update();
-            }
+        if (signPos != null && Tag.SIGNS.isTagged(signPos.getBlock().getType())) {
+            Sign sign = (Sign) signPos.getBlock().getState();
+            sign.setLine(2, "");
+            sign.update();
         }
 
         // Remove potion effects and set their walking speed back to normal
@@ -88,36 +93,38 @@ public class TurretManager {
     }
 
     public void fire(Player player) {
-        if(!onTurrets.contains(player))
+        if (!onTurrets.contains(player))
             return;
 
-        if(player.isGliding() || player.isFlying())
+        if (player.isGliding() || player.isFlying()) {
             demount(player, player.getLocation());
+            return;
+        }
 
         startReloading(player);
 
-        // do ammo taking
-        if(Config.RequireAmmo) {
-            if(!takeAmmo(player))
-                // If they run out of ammo, don't let them fire and play the empty sound
-                player.getWorld().playSound(player.getLocation(), Sound.BLOCK_DISPENSER_FAIL, 1.0F, 2.0F);
+        if (Config.RequireAmmo && !takeAmmo(player)) {
+            // If they run out of ammo, don't let them fire and play the empty sound
+            player.getWorld().playSound(player.getLocation(), Sound.BLOCK_DISPENSER_FAIL, 1.0F, 2.0F);
+            return;
         }
 
-        if(runRaycast(player))
+        // Run a raycast, if that fails fire normally
+        if (runRaycast(player))
             return;
 
         Arrow arrow = launchArrow(player);
 
-        if(Config.UseParticleTracers)
+        if (Config.UseParticleTracers) {
             TurretsMain.getInstance().getTracerManager().startTracing(arrow);
-        else
+        } else {
             arrow.setCritical(true);
+        }
 
         World world = player.getWorld();
         world.playSound(player.getLocation(), Sound.ENTITY_FIREWORK_ROCKET_BLAST, 1.0F, 2.0F);
         world.playEffect(player.getLocation(), Effect.MOBSPAWNER_FLAMES, 0);
     }
-
 
     @NotNull
     private Arrow launchArrow(Player player) {
@@ -125,12 +132,15 @@ public class TurretManager {
         try {
             Object nmsPlayer = player.getClass().getMethod("getHandle").invoke(player);
             Object nmsWorld = nmsPlayer.getClass().getMethod("getWorld").invoke(nmsPlayer);
-            Object nmsArrow = TurretsMain.getInstance().getNMSUtils().getNMSClass("EntityTippedArrow").getConstructor(TurretsMain.getInstance().getNMSUtils().getNMSClass("World"), TurretsMain.getInstance().getNMSUtils().getNMSClass("EntityLiving")).newInstance(nmsWorld, nmsPlayer);
+            Object nmsArrow = TurretsMain.getInstance().getNMSUtils().getNMSClass("EntityTippedArrow")
+                    .getConstructor(TurretsMain.getInstance().getNMSUtils().getNMSClass("World"),
+                            TurretsMain.getInstance().getNMSUtils().getNMSClass("EntityLiving"))
+                    .newInstance(nmsWorld, nmsPlayer);
             nmsArrow.getClass().getMethod("setNoGravity", boolean.class).invoke(nmsArrow, true);
-            nmsWorld.getClass().getMethod("addEntity", TurretsMain.getInstance().getNMSUtils().getNMSClass("Entity")).invoke(nmsWorld, nmsArrow);
+            nmsWorld.getClass().getMethod("addEntity", TurretsMain.getInstance().getNMSUtils().getNMSClass("Entity"))
+                    .invoke(nmsWorld, nmsArrow);
             arrow = (Arrow) nmsArrow.getClass().getMethod("getBukkitEntity").invoke(nmsArrow);
-        }
-        catch (Throwable e) {
+        } catch (Exception e) {
             throw new ArrowLaunchException("Something went wrong when trying to launch an arrow", e);
         }
 
@@ -148,77 +158,77 @@ public class TurretManager {
     }
 
     private boolean takeAmmo(Player player) {
-        if(Config.TakeFromChest && CraftManager.getInstance() != null) {
+        if (Config.TakeFromChest && CraftManager.getInstance() != null) {
             Block signBlock = player.getLocation().getBlock();
-            if (signBlock.getType().name().contains("SIGN")) {
+            if (Tag.SIGNS.isTagged(signBlock.getType())) {
                 Block adjacentBlock = getBlockSignAttachedTo(signBlock);
-                if(adjacentBlock instanceof InventoryHolder) {
+                if (adjacentBlock instanceof InventoryHolder) {
                     Inventory i = ((InventoryHolder) adjacentBlock.getState()).getInventory();
-                    if(i.containsAtLeast(new ItemStack(Config.TurretAmmo), 1)) {
+                    if (i.containsAtLeast(new ItemStack(Config.TurretAmmo), 1)) {
                         i.remove(Config.TurretAmmo);
                         return true;
                     }
                 }
             }
         }
-        if(Config.TakeFromInventory) {
-            if(player.getInventory().containsAtLeast(Config.TurretAmmo, 1)) {
-                player.getInventory().removeItem(Config.TurretAmmo);
-                player.updateInventory();
-                return true;
-            }
+        if (Config.TakeFromInventory && player.getInventory().containsAtLeast(Config.TurretAmmo, 1)) {
+            player.getInventory().removeItem(Config.TurretAmmo);
+            player.updateInventory();
+            return true;
         }
         return false;
     }
 
     private void startReloading(final Player player) {
         reloading.add(player);
-        Bukkit.getScheduler().scheduleSyncDelayedTask(TurretsMain.getInstance(), new Runnable() {
-            @Override
-            public void run() {
-                reloading.remove(player);
-            }
-        }, ((int) (Config.DelayBetweenShots * 10.0)));
+        Bukkit.getScheduler().scheduleSyncDelayedTask(TurretsMain.getInstance(), () -> reloading.remove(player),
+                ((int) (Config.DelayBetweenShots * 10.0)));
     }
 
     private boolean runRaycast(@NotNull Player shooter) {
         Location shooterLoc = shooter.getLocation();
         Vector shooterVector = shooterLoc.getDirection();
 
-        for(Player p : Bukkit.getOnlinePlayers()) {
-            if(p == null || !p.isOnline() || p == shooter || p.getWorld() != shooter.getWorld())
+        for (Player p : Bukkit.getOnlinePlayers()) {
+            if (p == null || !p.isOnline() || p == shooter || p.getWorld() != shooter.getWorld())
                 continue;
 
             // Check for elytra
             PlayerInventory inv = p.getInventory();
-            if(inv == null)
+            if (inv == null)
                 continue;
-           ItemStack chestplate = inv.getChestplate();
-            if(chestplate == null || chestplate.getType() != Material.ELYTRA)
+            ItemStack chestplate = inv.getChestplate();
+            if (chestplate == null || chestplate.getType() != Material.ELYTRA)
                 continue;
 
             // Check for angle
             Vector v = p.getLocation().subtract(shooterLoc).toVector();
-            if(v.angle(shooterVector) > Config.RaycastRadians)
+            if (v.angle(shooterVector) > Config.RaycastRadians)
                 continue;
 
             // Check for distance
             double distSquared = p.getLocation().distanceSquared(shooterLoc);
-            if(distSquared > Config.RaycastRange * Config.RaycastRange)
+            if (distSquared > Config.RaycastRange * Config.RaycastRange)
                 continue;
 
             // Check for WG PVP flag
-            if(MovecraftWorldGuard.getInstance().getWGUtils().getState(null, p.getLocation(), Flags.PVP) == State.DENY)
+            if (MovecraftWorldGuard.getInstance().getWGUtils().getState(null, p.getLocation(), Flags.PVP) == State.DENY)
                 continue;
 
             // Check for block directly between
             Block targetBlock = shooter.getTargetBlock(null, Config.RaycastRange);
-            if(targetBlock.getLocation().distanceSquared(shooterLoc) < distSquared)
+            if (targetBlock.getLocation().distanceSquared(shooterLoc) < distSquared)
                 continue;
 
             // Time to hit them!
-            if(Config.RaycastBreakElytra)
-                chestplate.setDurability((short) 431);
+            if (Config.RaycastBreakElytra) {
+                ItemMeta meta = chestplate.getItemMeta();
+                if (meta instanceof Damageable) {
+                    Damageable damageable = (Damageable) meta;
+                    damageable.setDamage(431);
+                    chestplate.setItemMeta((ItemMeta) damageable);
+                }
+            }
 
             p.setGliding(false);
             p.setSprinting(false);
@@ -241,14 +251,13 @@ public class TurretManager {
         return reloading.contains(p);
     }
 
-
     @Nullable
     public static Block getBlockSignAttachedTo(@NotNull Block block) {
         BlockData data = block.getState().getBlockData();
-        if(data instanceof Rotatable) {
+        if (data instanceof Rotatable) {
             return block.getRelative(((Rotatable) data).getRotation());
         }
-        if(data instanceof Directional) {
+        if (data instanceof Directional) {
             return block.getRelative(((Directional) data).getFacing());
         }
         return null;
