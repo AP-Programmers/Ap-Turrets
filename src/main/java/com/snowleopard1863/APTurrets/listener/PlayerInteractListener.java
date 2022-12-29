@@ -49,9 +49,9 @@ public class PlayerInteractListener implements Listener {
 
         TurretsMain.getInstance().getLogger().info("is sign");
         Sign sign = (Sign) event.getClickedBlock().getState();
-        if (sign.getLine(0).equalsIgnoreCase("Mounted") && sign.getLine(1).equalsIgnoreCase("Gun"))
+        if (!sign.getLine(0).equalsIgnoreCase("Mounted") || !sign.getLine(1).equalsIgnoreCase("Gun"))
             return;
-
+    
         TurretsMain.getInstance().getLogger().info("is mounted gun");
         // If a player left clicks the mounted gun with a stone button in hand,
         //  show them the statistics for the plugin (Damage, Knockback, Velocity, etc.)
