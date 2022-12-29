@@ -17,7 +17,7 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.jetbrains.annotations.NotNull;
 
 public class PlayerInteractListener implements Listener {
-    @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
+    @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = false)
     public void onClick(PlayerInteractEvent event) {
         TurretsMain.getInstance().getLogger().info("onClick");
         switch (event.getAction()) {
