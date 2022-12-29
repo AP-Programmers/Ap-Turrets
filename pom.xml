@@ -4,7 +4,7 @@
 
 	<groupId>snowleapord.github.com</groupId>
 	<artifactId>APTurrets</artifactId>
-	<version>2.5.d</version>
+	<version>3.0.0_beta-1</version>
 
 	<build>
 		<finalName>AP-Turrets</finalName>
