@@ -8,20 +8,20 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Set up JDK 13
-        uses: actions/setup-java@v2
+        uses: actions/setup-java@v3
         with:
           distribution: 'adopt-hotspot'
           java-version: '13'
       - name: Cache 1.14.4 Maven package
         id: cachePillage
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/.m2/repository/org/bukkit/craftbukkit/1.14.4-R0.1-SNAPSHOT/
           key: ${{ runner.os }}-1.14.4
           restore-keys: ${{ runner.os }}-1.14.4
       - name: Cache Maven packages
         id: cacheMain
-        uses: actions/cache@v2
+        uses: actions/cache@v3
         with:
           path: ~/.m2
           key: ${{ runner.os }}-m2_1.14.4
@@ -42,36 +42,36 @@ jobs:
 
     steps:
     - name: Checkout AP-Turrets
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         path: AP-Turrets
     - name: Checkout Movecraft-Combat
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         repository: 'TylerS1066/Movecraft-Combat'
         path: Movecraft-Combat
         ref: 'main'
     - name: Checkout Movecraft-WorldGuard
-      uses: actions/checkout@v2
+      uses: actions/checkout@v3
       with:
         repository: 'APDevTeam/Movecraft-WorldGuard'
         path: Movecraft-WorldGuard
         ref: 'main'
-    - name: Set up JDK 16
-      uses: actions/setup-java@v2
+    - name: Set up JDK 17
+      uses: actions/setup-java@v3
       with:
         distribution: 'adopt-hotspot'
-        java-version: '16'
+        java-version: '17'
     - name: Cache 1.14.4 Maven package
       id: cachePillage
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with:
         path: ~/.m2/repository/org/bukkit/craftbukkit/1.14.4-R0.1-SNAPSHOT/
         key: ${{ runner.os }}-1.14.4
         restore-keys: ${{ runner.os }}-1.14.4
     - name: Cache Maven packages
       id: cacheMain
-      uses: actions/cache@v2
+      uses: actions/cache@v3
       with:
         path: ~/.m2
         key: ${{ runner.os }}-m2
@@ -99,7 +99,7 @@ jobs:
     - name: Rename jar
       run: mv staging/AP-Turrets.jar staging/AP-Turrets_$GITHUB_SHA.jar
     - name: Upload jar
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: AP-Turrets_Dev-Build
         path: staging/AP-Turrets_*.jar
