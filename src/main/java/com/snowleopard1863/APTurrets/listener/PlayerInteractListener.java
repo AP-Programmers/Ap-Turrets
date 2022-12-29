@@ -11,21 +11,26 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.EventPriority;
 import org.bukkit.event.Listener;
-import org.bukkit.event.block.Action;
 import org.bukkit.event.player.PlayerInteractEvent;
 import org.jetbrains.annotations.NotNull;
 
 public class PlayerInteractListener implements Listener {
     @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
     public void onClick(PlayerInteractEvent event) {
-        if (event.getAction() == Action.RIGHT_CLICK_AIR || event.getAction() == Action.RIGHT_CLICK_BLOCK) {
-            rightClick(event);
-        }
-        if (event.getAction() == Action.RIGHT_CLICK_BLOCK) {
-            rightClickBlock(event);
-        }
-        if (event.getAction() == Action.LEFT_CLICK_BLOCK) {
-            leftClickBlock(event);
+        switch (event.getAction()) {
+            case RIGHT_CLICK_AIR:
+                rightClick(event);
+                break;
+            case RIGHT_CLICK_BLOCK:
+                rightClickBlock(event);
+                break;
+            case LEFT_CLICK_BLOCK:
+                leftClickBlock(event);
+                break;
+            case LEFT_CLICK_AIR:
+            case PHYSICAL:
+            default:
+                break;
         }
     }
 
