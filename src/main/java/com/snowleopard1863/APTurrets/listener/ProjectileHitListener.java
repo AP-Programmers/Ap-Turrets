@@ -22,7 +22,7 @@ public class ProjectileHitListener implements Listener {
 
         World world = event.getEntity().getWorld();
         Location l = arrow.getLocation().getBlock().getLocation();
-        world.playEffect(l, Effect.STEP_SOUND, l.getBlock());
+        world.playEffect(l, Effect.STEP_SOUND, l.getBlock().getType());
         world.playEffect(l, Effect.ANVIL_BREAK, 0, 0);
     }
 }
