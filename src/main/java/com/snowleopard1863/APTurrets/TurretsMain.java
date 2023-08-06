@@ -42,6 +42,7 @@ public class TurretsMain extends JavaPlugin implements Listener {
         Config.RaycastRadians = getConfig().getDouble("RaycastAngle", 5.0D) / 180.0 * Math.PI;
         Config.RaycastBreakElytra = getConfig().getBoolean("RaycastBreakElytra", false);
         Config.RaycastRange = getConfig().getInt("RaycastRange", 160);
+        Config.IgnorePilots = getConfig().getBoolean("IgnorePilots", true);
 
 
         if (getServer().getPluginManager().getPlugin("Vault") != null) {
@@ -76,7 +77,6 @@ public class TurretsMain extends JavaPlugin implements Listener {
 
         getServer().getPluginManager().registerEvents(this, this);
         getServer().getPluginManager().registerEvents(new EntityDamageEntityListener(), this);
-        getServer().getPluginManager().registerEvents(new EntityDamageListener(), this);
         getServer().getPluginManager().registerEvents(new PlayerDeathListener(), this);
         getServer().getPluginManager().registerEvents(new PlayerInteractEntityListener(), this);
         getServer().getPluginManager().registerEvents(new PlayerInteractListener(), this);

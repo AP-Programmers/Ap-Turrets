@@ -13,3 +13,4 @@ DoRaycast: false # Do raycast instant shots for elytra fliers
 RaycastAngle: 5.0 # Angle for the raycast cone of aiming
 RaycastBreakElytra: false # Break elytra on raycast?
 RaycastRange: 160 # Raycast max range
+IgnorePilots: true # Ignore pilots on their crafts
