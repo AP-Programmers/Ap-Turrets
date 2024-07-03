@@ -2,7 +2,6 @@ package com.snowleopard1863.APTurrets;
 
 import com.snowleopard1863.APTurrets.config.Config;
 import com.snowleopard1863.APTurrets.listener.*;
-import com.snowleopard1863.APTurrets.utils.NMUtils;
 import net.milkbowl.vault.economy.Economy;
 import org.bukkit.ChatColor;
 import org.bukkit.event.Listener;
@@ -19,7 +18,6 @@ public class TurretsMain extends JavaPlugin implements Listener {
         return instance;
     }
 
-    private NMUtils nmsUtils;
     private TurretManager turretManager;
 
     public void onEnable() {
@@ -79,7 +77,6 @@ public class TurretsMain extends JavaPlugin implements Listener {
         getServer().getPluginManager().registerEvents(new ProjectileHitListener(), this);
         getServer().getPluginManager().registerEvents(new SignChangeListener(), this);
 
-        nmsUtils = new NMUtils();
         turretManager = new TurretManager();
         getLogger().info(getDescription().getName() + " v" + getDescription().getVersion() + " has been enabled.");
         instance = this;
@@ -92,10 +89,6 @@ public class TurretsMain extends JavaPlugin implements Listener {
 
     public Economy getEconomy() {
         return economy;
-    }
-
-    public NMUtils getNMUtils() {
-        return nmsUtils;
     }
 
     public TurretManager getTurretManager() {
