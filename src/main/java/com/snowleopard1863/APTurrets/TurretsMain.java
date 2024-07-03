@@ -2,7 +2,6 @@ package com.snowleopard1863.APTurrets;
 
 import com.snowleopard1863.APTurrets.config.Config;
 import com.snowleopard1863.APTurrets.listener.*;
-import com.snowleopard1863.APTurrets.task.ArrowTracerTask;
 import com.snowleopard1863.APTurrets.utils.NMUtils;
 import net.milkbowl.vault.economy.Economy;
 import org.bukkit.ChatColor;
@@ -22,7 +21,6 @@ public class TurretsMain extends JavaPlugin implements Listener {
 
     private NMUtils nmsUtils;
     private TurretManager turretManager;
-    private TracerManager tracerManager;
 
     public void onEnable() {
         saveDefaultConfig();
@@ -36,7 +34,6 @@ public class TurretsMain extends JavaPlugin implements Listener {
         Config.IncindiaryChance = getConfig().getDouble("IncindiaryChance", 0.1D);
         Config.Damage = getConfig().getDouble("Damage", 2.5D);
         Config.ArrowVelocity = getConfig().getDouble("ArrowVelocity", 4.0D);
-        Config.UseParticleTracers = getConfig().getBoolean("UseParticleTracers", true);
         Config.DelayBetweenShots = getConfig().getDouble("DelayBetweenShots", 0.2D);
         Config.DoRaycast = getConfig().getBoolean("DoRaycast", false);
         Config.RaycastRadians = getConfig().getDouble("RaycastAngle", 5.0D) / 180.0 * Math.PI;
@@ -71,10 +68,6 @@ public class TurretsMain extends JavaPlugin implements Listener {
             return;
         }
 
-        if (Config.UseParticleTracers) {
-            getServer().getScheduler().scheduleSyncRepeatingTask(this, new ArrowTracerTask(), 0L, 0L);
-        }
-
         getServer().getPluginManager().registerEvents(this, this);
         getServer().getPluginManager().registerEvents(new EntityDamageEntityListener(), this);
         getServer().getPluginManager().registerEvents(new PlayerDeathListener(), this);
@@ -88,14 +81,12 @@ public class TurretsMain extends JavaPlugin implements Listener {
 
         nmsUtils = new NMUtils();
         turretManager = new TurretManager();
-        tracerManager = new TracerManager();
         getLogger().info(getDescription().getName() + " v" + getDescription().getVersion() + " has been enabled.");
         instance = this;
     }
 
     public void onDisable() {
         turretManager.disable();
-        tracerManager.disable();
         getLogger().info(getDescription().getName() + " v" + getDescription().getVersion() + " has been disabled.");
     }
 
@@ -109,9 +100,5 @@ public class TurretsMain extends JavaPlugin implements Listener {
 
     public TurretManager getTurretManager() {
         return turretManager;
-    }
-
-    public TracerManager getTracerManager() {
-        return tracerManager;
     }
 }

@@ -116,12 +116,7 @@ public class TurretManager {
             return;
 
         Arrow arrow = launchArrow(player);
-
-        if (Config.UseParticleTracers) {
-            TurretsMain.getInstance().getTracerManager().startTracing(arrow);
-        } else {
-            arrow.setCritical(true);
-        }
+        arrow.setCritical(true);
 
         World world = player.getWorld();
         world.playSound(player.getLocation(), Sound.ENTITY_FIREWORK_ROCKET_BLAST, 1.0F, 2.0F);
