@@ -3,7 +3,7 @@ package com.snowleopard1863.APTurrets;
 import com.snowleopard1863.APTurrets.config.Config;
 import com.snowleopard1863.APTurrets.listener.*;
 import com.snowleopard1863.APTurrets.task.ArrowTracerTask;
-import com.snowleopard1863.APTurrets.utils.NMSUtils;
+import com.snowleopard1863.APTurrets.utils.NMUtils;
 import net.milkbowl.vault.economy.Economy;
 import org.bukkit.ChatColor;
 import org.bukkit.event.Listener;
@@ -20,7 +20,7 @@ public class TurretsMain extends JavaPlugin implements Listener {
         return instance;
     }
 
-    private NMSUtils nmsUtils;
+    private NMUtils nmsUtils;
     private TurretManager turretManager;
     private TracerManager tracerManager;
 
@@ -86,7 +86,7 @@ public class TurretsMain extends JavaPlugin implements Listener {
         getServer().getPluginManager().registerEvents(new ProjectileHitListener(), this);
         getServer().getPluginManager().registerEvents(new SignChangeListener(), this);
 
-        nmsUtils = new NMSUtils(getServer().getClass().getPackage().getName());
+        nmsUtils = new NMUtils();
         turretManager = new TurretManager();
         tracerManager = new TracerManager();
         getLogger().info(getDescription().getName() + " v" + getDescription().getVersion() + " has been enabled.");
@@ -103,7 +103,7 @@ public class TurretsMain extends JavaPlugin implements Listener {
         return economy;
     }
 
-    public NMSUtils getNMSUtils() {
+    public NMUtils getNMUtils() {
         return nmsUtils;
     }
 

@@ -7,6 +7,8 @@ import net.countercraft.movecraft.craft.CraftManager;
 import net.countercraft.movecraft.worldguard.MovecraftWorldGuard;
 import net.countercraft.movecraft.worldguard.utils.WorldGuardUtils.State;
 
+import net.minecraft.server.level.ServerLevel;
+import net.minecraft.server.level.ServerPlayer;
 import org.bukkit.Bukkit;
 import org.bukkit.Effect;
 import org.bukkit.Location;
@@ -19,7 +21,6 @@ import org.bukkit.block.Sign;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.Directional;
 import org.bukkit.block.data.Rotatable;
-import org.bukkit.craftbukkit.v1_18_R2.entity.CraftTippedArrow;
 import org.bukkit.entity.Arrow;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
@@ -131,17 +132,12 @@ public class TurretManager {
     private Arrow launchArrow(Player player) {
         Arrow arrow;
         try {
-            Object nmsPlayer = player.getClass().getMethod("getHandle").invoke(player);
-            Object nmsWorld = nmsPlayer.getClass().getMethod("getLevel").invoke(nmsPlayer);
-            CraftTippedArrow
-            Object nmsArrow = TurretsMain.getInstance().getNMSUtils().getNMSClass("EntityTippedArrow")
-                    .getConstructor(TurretsMain.getInstance().getNMSUtils().getNMSClass("level.ServerLevel"),
-                            TurretsMain.getInstance().getNMSUtils().getNMSClass("EntityLiving"))
-                    .newInstance(nmsWorld, nmsPlayer);
-            nmsArrow.getClass().getMethod("setNoGravity", boolean.class).invoke(nmsArrow, true);
-            nmsWorld.getClass().getMethod("addEntity", TurretsMain.getInstance().getNMSUtils().getNMSClass("Entity"))
-                    .invoke(nmsWorld, nmsArrow);
-            arrow = (Arrow) nmsArrow.getClass().getMethod("getBukkitEntity").invoke(nmsArrow);
+            ServerPlayer nmsPlayer = (ServerPlayer) player.getClass().getMethod("getHandle").invoke(player);
+            ServerLevel nmsWorld = nmsPlayer.getLevel();
+            net.minecraft.world.entity.projectile.Arrow nmsArrow = new net.minecraft.world.entity.projectile.Arrow(nmsWorld, nmsPlayer);
+            nmsArrow.setNoGravity(true);
+            nmsWorld.addFreshEntity(nmsArrow);
+            arrow = (Arrow) nmsArrow.getBukkitEntity();
         } catch (Exception e) {
             throw new ArrowLaunchException("Something went wrong when trying to launch an arrow", e);
         }

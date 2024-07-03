@@ -31,11 +31,11 @@ public class TracerManager {
         arrow.setCritical(false);
 
         try {
-            Object packet = TurretsMain.getInstance().getNMSUtils().getNMSClass("PacketPlayOutEntityDestroy").getConstructor(int[].class).newInstance(new int[]{arrow.getEntityId()});
+            Object packet = TurretsMain.getInstance().getNMUtils().getNMClass("PacketPlayOutEntityDestroy").getConstructor(int[].class).newInstance(new int[]{arrow.getEntityId()});
             for(Player p : TurretsMain.getInstance().getServer().getOnlinePlayers()) {
                 Object nmsPlayer = p.getClass().getMethod("getHandle").invoke(p);
                 Object pConn = nmsPlayer.getClass().getField("playerConnection").get(nmsPlayer);
-                pConn.getClass().getMethod("sendPacket", TurretsMain.getInstance().getNMSUtils().getNMSClass("Packet")).invoke(pConn, packet);
+                pConn.getClass().getMethod("sendPacket", TurretsMain.getInstance().getNMUtils().getNMClass("Packet")).invoke(pConn, packet);
             }
         } catch (Exception e) {
             e.printStackTrace();
