@@ -3,8 +3,8 @@ name: Java CI
 on: [workflow_dispatch, push, pull_request]
 
 jobs:
-  # Build 1.14.4 NMS
-  pillage_1_14_4:
+  # Build 1.18.2 NMS
+  v1_18_2:
     runs-on: ubuntu-latest
     steps:
       - name: Set up JDK 13
@@ -12,33 +12,33 @@ jobs:
         with:
           distribution: 'adopt-hotspot'
           java-version: '13'
-      - name: Cache 1.14.4 Maven package
+      - name: Cache 1.18.2 Maven package
         id: cachePillage
         uses: actions/cache@v3
         with:
-          path: ~/.m2/repository/org/bukkit/craftbukkit/1.14.4-R0.1-SNAPSHOT/
-          key: ${{ runner.os }}-1.14.4
-          restore-keys: ${{ runner.os }}-1.14.4
+          path: ~/.m2/repository/org/bukkit/craftbukkit/1.18.2-R0.1-SNAPSHOT/
+          key: ${{ runner.os }}-1.18.2
+          restore-keys: ${{ runner.os }}-1.18.2
       - name: Cache Maven packages
         id: cacheMain
         uses: actions/cache@v3
         with:
           path: ~/.m2
-          key: ${{ runner.os }}-m2_1.14.4
-          restore-keys: ${{ runner.os }}-m2_1.14.4
+          key: ${{ runner.os }}-m2_1.18.2
+          restore-keys: ${{ runner.os }}-m2_1.18.2
 
       - name: Setup BuildTools
         run: mkdir BuildTools && wget -O BuildTools/BuildTools.jar https://hub.spigotmc.org/jenkins/job/BuildTools/lastSuccessfulBuild/artifact/target/BuildTools.jar
-      - name: Check 1.14.4
-        id: pillage
-        run: test -f ~/.m2/repository/org/bukkit/craftbukkit/1.14.4-R0.1-SNAPSHOT/craftbukkit-1.14.4-R0.1-SNAPSHOT.jar && echo "::set-output name=sucess::true" || echo "::set-output name=sucess::false"
-      - name: Build 1.14.4
-        if: steps.pillage.outputs.sucess != 'true'
-        run: cd BuildTools && java -jar BuildTools.jar --rev 1.14.4 --compile craftbukkit
+      - name: Check 1.18.2
+        id: v1_18_2
+        run: test -f ~/.m2/repository/org/bukkit/craftbukkit/1.18.2-R0.1-SNAPSHOT/craftbukkit-1.18.2-R0.1-SNAPSHOT.jar && echo "::set-output name=sucess::true" || echo "::set-output name=sucess::false"
+      - name: Build 1.18.2
+        if: steps.v1_18_2.outputs.sucess != 'true'
+        run: cd BuildTools && java -jar BuildTools.jar --rev 1.18.2 --compile craftbukkit
 
   build:
     runs-on: ubuntu-latest
-    needs: [pillage_1_14_4]
+    needs: [v1_18_2]
 
     steps:
     - name: Checkout AP-Turrets
@@ -48,7 +48,7 @@ jobs:
     - name: Checkout Movecraft-Combat
       uses: actions/checkout@v3
       with:
-        repository: 'TylerS1066/Movecraft-Combat'
+        repository: 'APDevTeam/Movecraft-Combat'
         path: Movecraft-Combat
         ref: 'main'
     - name: Checkout Movecraft-WorldGuard
@@ -62,13 +62,13 @@ jobs:
       with:
         distribution: 'adopt-hotspot'
         java-version: '17'
-    - name: Cache 1.14.4 Maven package
+    - name: Cache 1.18.2 Maven package
       id: cachePillage
       uses: actions/cache@v3
       with:
-        path: ~/.m2/repository/org/bukkit/craftbukkit/1.14.4-R0.1-SNAPSHOT/
-        key: ${{ runner.os }}-1.14.4
-        restore-keys: ${{ runner.os }}-1.14.4
+        path: ~/.m2/repository/org/bukkit/craftbukkit/1.18.2-R0.1-SNAPSHOT/
+        key: ${{ runner.os }}-1.18.2
+        restore-keys: ${{ runner.os }}-1.18.2
     - name: Cache Maven packages
       id: cacheMain
       uses: actions/cache@v3

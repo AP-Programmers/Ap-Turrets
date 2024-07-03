@@ -19,6 +19,7 @@ import org.bukkit.block.Sign;
 import org.bukkit.block.data.BlockData;
 import org.bukkit.block.data.Directional;
 import org.bukkit.block.data.Rotatable;
+import org.bukkit.craftbukkit.v1_18_R2.entity.CraftTippedArrow;
 import org.bukkit.entity.Arrow;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
@@ -131,9 +132,10 @@ public class TurretManager {
         Arrow arrow;
         try {
             Object nmsPlayer = player.getClass().getMethod("getHandle").invoke(player);
-            Object nmsWorld = nmsPlayer.getClass().getMethod("getWorld").invoke(nmsPlayer);
+            Object nmsWorld = nmsPlayer.getClass().getMethod("getLevel").invoke(nmsPlayer);
+            CraftTippedArrow
             Object nmsArrow = TurretsMain.getInstance().getNMSUtils().getNMSClass("EntityTippedArrow")
-                    .getConstructor(TurretsMain.getInstance().getNMSUtils().getNMSClass("World"),
+                    .getConstructor(TurretsMain.getInstance().getNMSUtils().getNMSClass("level.ServerLevel"),
                             TurretsMain.getInstance().getNMSUtils().getNMSClass("EntityLiving"))
                     .newInstance(nmsWorld, nmsPlayer);
             nmsArrow.getClass().getMethod("setNoGravity", boolean.class).invoke(nmsArrow, true);
