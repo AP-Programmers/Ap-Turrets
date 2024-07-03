@@ -24,13 +24,13 @@ jobs:
         uses: actions/checkout@v3
         with:
           repository: 'APDevTeam/Movecraft-Combat'
-          path: Movecraft-Combat
+          path: ../Movecraft-Combat
           ref: 'main'
       - name: Checkout Movecraft-WorldGuard
         uses: actions/checkout@v3
         with:
           repository: 'APDevTeam/Movecraft-WorldGuard'
-          path: Movecraft-WorldGuard
+          path: ../Movecraft-WorldGuard
           ref: 'main'
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v3
@@ -48,13 +48,13 @@ jobs:
 
       # Build Movecraft-Combat
       - name: Build Movecraft-Combat
-        run:  mvn -B package -T 1C --file Movecraft-Combat/pom.xml
+        run:  mvn -B package -T 1C --file ../Movecraft-Combat/pom.xml
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
         # Build Movecraft-WorldGuard
       - name: Build Movecraft-WorldGuard
-        run:  mvn -B package -T 1C --file Movecraft-WorldGuard/pom.xml
+        run:  mvn -B package -T 1C --file ../Movecraft-WorldGuard/pom.xml
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
