@@ -59,7 +59,7 @@ jobs:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build AP-Turrets
-        run: ./gradlew clean shadowJar
+        run: ./gradlew clean build
 
       - name: Stage jar
         run: mkdir staging && cp AP-Turrets/build/libs/AP-Turrets.jar staging && mv staging/AP-Turrets.jar staging/AP-Turrets_$GITHUB_SHA.jar
