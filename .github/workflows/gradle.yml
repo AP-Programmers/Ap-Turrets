@@ -1,0 +1,70 @@
+name: Java CI
+
+on:
+  workflow_dispatch:
+  push:
+  pull_request:
+
+jobs:
+  # Build AP-Turrets
+  build:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout AP-Turrets
+        uses: actions/checkout@v4
+      - name: Set up JDK 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: 'temurin'
+          java-version: '21'
+      - name: Checkout Movecraft-Combat
+        uses: actions/checkout@v3
+        with:
+          repository: 'APDevTeam/Movecraft-Combat'
+          path: Movecraft-Combat
+          ref: 'main'
+      - name: Checkout Movecraft-WorldGuard
+        uses: actions/checkout@v3
+        with:
+          repository: 'APDevTeam/Movecraft-WorldGuard'
+          path: Movecraft-WorldGuard
+          ref: 'main'
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v3
+        with:
+          build-scan-publish: true
+          build-scan-terms-of-use-url: "https://gradle.com/terms-of-service"
+          build-scan-terms-of-use-agree: "yes"
+      - name: Cache Maven packages
+        id: cacheMain
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2
+          key: ${{ runner.os }}-m2
+          restore-keys: ${{ runner.os }}-m2
+
+      # Build Movecraft-Combat
+      - name: Build Movecraft-Combat
+        run:  mvn -B package -T 1C --file Movecraft-Combat/pom.xml
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+        # Build Movecraft-WorldGuard
+      - name: Build Movecraft-WorldGuard
+        run:  mvn -B package -T 1C --file Movecraft-WorldGuard/pom.xml
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build AP-Turrets
+        run: ./gradlew clean shadowJar
+
+      - name: Stage jar
+        run: mkdir staging && cp AP-Turrets/build/libs/AP-Turrets.jar staging && mv staging/AP-Turrets.jar staging/AP-Turrets_$GITHUB_SHA.jar
+      - name: Upload jar
+        uses: actions/upload-artifact@v4
+        with:
+          name: AP-Turrets_Dev-Build
+          path: staging/AP-Turrets_*.jar
