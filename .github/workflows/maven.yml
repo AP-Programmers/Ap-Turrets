@@ -7,11 +7,11 @@ jobs:
   v1_18_2:
     runs-on: ubuntu-latest
     steps:
-      - name: Set up JDK 13
+      - name: Set up JDK 17
         uses: actions/setup-java@v3
         with:
           distribution: 'adopt-hotspot'
-          java-version: '13'
+          java-version: '17'
       - name: Cache 1.18.2 Maven package
         id: cachePillage
         uses: actions/cache@v3
