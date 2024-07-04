@@ -28,7 +28,6 @@ repositories {
 
 dependencies {
     api("org.jetbrains:annotations-java5:24.1.0")
-    api("io.papermc.paper:paper-api:1.18.2-R0.1-SNAPSHOT")
     paperweight.paperDevBundle("1.18.2-R0.1-SNAPSHOT")
     compileOnly("net.countercraft:movecraft:+")
     compileOnly(files("../Movecraft-WorldGuard/target/Movecraft-WorldGuard.jar"))
@@ -42,9 +41,12 @@ description = "APTurrets"
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(17)
 
-tasks.jar {
-    archiveClassifier.set("")
-    archiveVersion.set("")
+tasks.assemble {
+    dependsOn(tasks.reobfJar)
+}
+
+tasks.reobfJar {
+    outputJar = layout.buildDirectory.file("libs/AP-Turrets.jar")
 }
 
 tasks.processResources {
