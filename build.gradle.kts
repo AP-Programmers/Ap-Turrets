@@ -41,3 +41,15 @@ version = "3.0.0_beta-2"
 description = "APTurrets"
 
 java.toolchain.languageVersion = JavaLanguageVersion.of(17)
+
+tasks.jar {
+    archiveClassifier.set("")
+    archiveVersion.set("")
+}
+
+tasks.processResources {
+    from(rootProject.file("LICENSE.md"))
+    filesMatching("*.yml") {
+        expand(mapOf("projectVersion" to project.version))
+    }
+}
