@@ -13,7 +13,6 @@ public class Config {
     public static double IncindiaryChance = 0.1D;
     public static double ArrowVelocity = 4.0D;
     public static int KnockbackStrength = 2;
-    public static boolean UseParticleTracers = true;
     public static double DelayBetweenShots = 0.2D;
     public static boolean DoRaycast = false;
     public static double RaycastRadians = 2.0 / 180.0 * Math.PI;
