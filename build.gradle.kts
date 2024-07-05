@@ -8,42 +8,26 @@ plugins {
 repositories {
     gradlePluginPortal()
     mavenLocal()
-    githubPackage("apdevteam/movecraft")
-    maven {
-        url = uri("https://repo.maven.apache.org/maven2/")
-    }
-    maven {
-        url = uri("https://hub.spigotmc.org/nexus/content/repositories/snapshots/")
-    }
-    maven {
-        url = uri("https://oss.sonatype.org/content/repositories/snapshots")
-    }
-    maven {
-        url = uri("https://maven.enginehub.org/repo/")
-    }
-    maven {
-        url = uri("https://jitpack.io")
-    }
+    mavenCentral()
+    maven("https://repo.papermc.io/repository/maven-public/")
+    maven { githubPackage("apdevteam/movecraft")(this) }
+    maven { githubPackage("apdevteam/movecraft-worldguard")(this) }
+    maven("https://jitpack.io")
 }
 
 dependencies {
     api("org.jetbrains:annotations-java5:24.1.0")
     paperweight.paperDevBundle("1.18.2-R0.1-SNAPSHOT")
     compileOnly("net.countercraft:movecraft:+")
-    compileOnly(files("../Movecraft-WorldGuard/target/Movecraft-WorldGuard.jar"))
+    compileOnly("net.countercraft.movecraft.worldguard:movecraft-worldguard:+")
     compileOnly("com.sk89q.worldguard:worldguard-bukkit:7.0.7")
     compileOnly("com.github.MilkBowl:VaultAPI:1.7.1")
 }
 
-group = "snowleapord.github.com"
-version = "3.0.0_beta-2"
+group = "com.snowleopard"
+version = "3.0.0_beta-2_gradle"
 description = "APTurrets"
-
 java.toolchain.languageVersion = JavaLanguageVersion.of(17)
-
-tasks.assemble {
-    dependsOn(tasks.reobfJar)
-}
 
 tasks.reobfJar {
     outputJar = layout.buildDirectory.file("libs/AP-Turrets.jar")
@@ -53,5 +37,27 @@ tasks.processResources {
     from(rootProject.file("LICENSE.md"))
     filesMatching("*.yml") {
         expand(mapOf("projectVersion" to project.version))
+    }
+}
+
+publishing {
+    publications {
+        create<MavenPublication>("maven") {
+            groupId = "com.snowleopard"
+            artifactId = "ap-turrets"
+            version = "${project.version}"
+
+            artifact(tasks.reobfJar)
+        }
+    }
+    repositories {
+        maven {
+            name = "GitHubPackages"
+            url = uri("https://maven.pkg.github.com/apdevteam/ap-turrets")
+            credentials {
+                username = System.getenv("GITHUB_ACTOR")
+                password = System.getenv("GITHUB_TOKEN")
+            }
+        }
     }
 }
