@@ -13,6 +13,7 @@ repositories {
     maven { githubPackage("apdevteam/movecraft")(this) }
     maven { githubPackage("apdevteam/movecraft-worldguard")(this) }
     maven("https://jitpack.io")
+    maven("https://maven.enginehub.org/repo/")
 }
 
 dependencies {
