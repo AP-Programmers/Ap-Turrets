@@ -3,8 +3,10 @@ package com.snowleopard1863.APTurrets;
 import com.sk89q.worldguard.protection.flags.Flags;
 import com.snowleopard1863.APTurrets.config.Config;
 import com.snowleopard1863.APTurrets.exception.ArrowLaunchException;
+import net.countercraft.movecraft.combat.features.directors.Directors;
 import net.countercraft.movecraft.craft.CraftManager;
 import net.countercraft.movecraft.worldguard.MovecraftWorldGuard;
+import net.countercraft.movecraft.worldguard.utils.WorldGuardUtils;
 import net.countercraft.movecraft.worldguard.utils.WorldGuardUtils.State;
 
 import net.minecraft.server.level.ServerLevel;
@@ -37,12 +39,13 @@ import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.HashSet;
+import java.util.Set;
 
 import static com.snowleopard1863.APTurrets.TurretsMain.PREFIX;
 
 public class TurretManager {
-    private final HashSet<Player> onTurrets = new HashSet<>();
-    private final HashSet<Player> reloading = new HashSet<>();
+    private final Set<Player> onTurrets = new HashSet<>();
+    private final Set<Player> reloading = new HashSet<>();
 
     public void disable() {
         for (Player p : onTurrets) {
@@ -205,8 +208,20 @@ public class TurretManager {
                 continue;
 
             // Check for WG PVP flag
-            if (MovecraftWorldGuard.getInstance().getWGUtils().getState(null, p.getLocation(), Flags.PVP) == State.DENY)
-                continue;
+            WorldGuardUtils wgUtils = MovecraftWorldGuard.getInstance().getWGUtils();
+            if (wgUtils.getState(null, p.getLocation(), Flags.PVP) == State.DENY) {
+                // PVP flag is denied, check if they are a member, if so, exit
+                Set<String> regionNames = wgUtils.getRegions(p.getLocation());
+                boolean isMember = regionNames.stream().map(regionName -> wgUtils.isMember(regionName, p.getLocation().getWorld(), p)).reduce(Boolean.FALSE, Boolean::logicalOr);
+                if (isMember)
+                    continue;
+
+                // Player is not a member, time to check if they are a director
+                if(!Directors.isAnyDirector(p))
+                    continue;
+
+                // Player is a director, let them be hit!
+            }
 
             // Check for block directly between
             Block targetBlock = shooter.getTargetBlock(null, Config.RaycastRange);

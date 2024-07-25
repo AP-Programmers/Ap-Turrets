@@ -11,6 +11,7 @@ repositories {
     mavenCentral()
     maven("https://repo.papermc.io/repository/maven-public/")
     maven { githubPackage("apdevteam/movecraft")(this) }
+    maven { githubPackage("apdevteam/movecraft-combat")(this) }
     maven { githubPackage("apdevteam/movecraft-worldguard")(this) }
     maven("https://jitpack.io")
     maven("https://maven.enginehub.org/repo/")
@@ -20,6 +21,7 @@ dependencies {
     api("org.jetbrains:annotations-java5:24.1.0")
     paperweight.paperDevBundle("1.18.2-R0.1-SNAPSHOT")
     compileOnly("net.countercraft:movecraft:+")
+    compileOnly("net.countercraft.movecraft.combat:movecraft-combat:+")
     compileOnly("net.countercraft.movecraft.worldguard:movecraft-worldguard:+")
     compileOnly("com.sk89q.worldguard:worldguard-bukkit:7.0.7")
     compileOnly("com.github.MilkBowl:VaultAPI:1.7.1")
