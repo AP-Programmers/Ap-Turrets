@@ -224,7 +224,7 @@ public class TurretManager {
             }
 
             // Check for block directly between
-            Block targetBlock = shooter.getTargetBlock(null, Config.RaycastRange);
+            Block targetBlock = shooter.getTargetBlock(Directors.Transparent, Config.RaycastRange);
             if (targetBlock.getLocation().distanceSquared(shooterLoc) < distSquared)
                 continue;
 
