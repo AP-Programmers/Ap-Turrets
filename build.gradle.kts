@@ -18,17 +18,17 @@ repositories {
 
 dependencies {
     api("org.jetbrains:annotations-java5:24.1.0")
-    paperweight.paperDevBundle("1.18.2-R0.1-SNAPSHOT")
+    paperweight.paperDevBundle("1.20.6-R0.1-SNAPSHOT")
     compileOnly("net.countercraft:movecraft:+")
     compileOnly("net.countercraft.movecraft.worldguard:movecraft-worldguard:+")
-    compileOnly("com.sk89q.worldguard:worldguard-bukkit:7.0.7")
+    compileOnly("com.sk89q.worldguard:worldguard-bukkit:7.0.10")
     compileOnly("com.github.MilkBowl:VaultAPI:1.7.1")
 }
 
 group = "com.snowleopard"
-version = "3.0.0_beta-2_gradle"
+version = "3.0.0_beta-3"
 description = "APTurrets"
-java.toolchain.languageVersion = JavaLanguageVersion.of(17)
+java.toolchain.languageVersion = JavaLanguageVersion.of(21)
 
 tasks.reobfJar {
     outputJar = layout.buildDirectory.file("libs/AP-Turrets.jar")

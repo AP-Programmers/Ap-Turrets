@@ -74,8 +74,8 @@ public class TurretManager {
         player.teleport(signPos);
 
         // Effects to add zoom and lock a player from jumping
-        player.addPotionEffect(new PotionEffect(PotionEffectType.SLOW, 1000000, 6));
-        player.addPotionEffect(new PotionEffect(PotionEffectType.JUMP, 1000000, 200));
+        player.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 1000000, 6));
+        player.addPotionEffect(new PotionEffect(PotionEffectType.JUMP_BOOST, 1000000, 200));
     }
 
     public void demount(Player player, @Nullable Location signPos) {
@@ -90,8 +90,8 @@ public class TurretManager {
         }
 
         // Remove potion effects and set their walking speed back to normal
-        player.removePotionEffect(PotionEffectType.JUMP);
-        player.removePotionEffect(PotionEffectType.SLOW);
+        player.removePotionEffect(PotionEffectType.JUMP_BOOST);
+        player.removePotionEffect(PotionEffectType.SLOWNESS);
     }
 
     public void fire(Player player) {
@@ -115,7 +115,7 @@ public class TurretManager {
         if (runRaycast(player))
             return;
 
-        Arrow arrow = launchArrow(player);
+        Arrow arrow = launchArrow(player, Config.TurretAmmo); // TODO: Support tags
         arrow.setCritical(true);
 
         World world = player.getWorld();
@@ -124,29 +124,16 @@ public class TurretManager {
     }
 
     @NotNull
-    private Arrow launchArrow(Player player) {
-        Arrow arrow;
-        try {
-            ServerPlayer nmsPlayer = (ServerPlayer) player.getClass().getMethod("getHandle").invoke(player);
-            ServerLevel nmsWorld = nmsPlayer.getLevel();
-            net.minecraft.world.entity.projectile.Arrow nmsArrow = new net.minecraft.world.entity.projectile.Arrow(nmsWorld, nmsPlayer);
-            nmsArrow.setNoGravity(true);
-            nmsWorld.addFreshEntity(nmsArrow);
-            arrow = (Arrow) nmsArrow.getBukkitEntity();
-        } catch (Exception e) {
-            throw new ArrowLaunchException("Something went wrong when trying to launch an arrow", e);
-        }
-
+    private Arrow launchArrow(@NotNull Player player, ItemStack item) {
+        Arrow arrow = player.launchProjectile(Arrow.class);
         arrow.setShooter(player);
+        arrow.setGravity(false);
         Location offset = player.getLocation().add(player.getLocation().getDirection().multiply(4));
         arrow.setVelocity(offset.getDirection().multiply(Config.ArrowVelocity));
-        arrow.setBounce(false);
         arrow.setMetadata("isTurretBullet", new FixedMetadataValue(TurretsMain.getInstance(), true));
         arrow.setKnockbackStrength(Config.KnockbackStrength);
-        double rand = Math.random();
-        if (rand <= Config.IncindiaryChance)
+        if (Math.random() <= Config.IncindiaryChance)
             arrow.setFireTicks(500);
-
         return arrow;
     }
 
@@ -157,7 +144,7 @@ public class TurretManager {
                 Block adjacentBlock = getBlockSignAttachedTo(signBlock);
                 if (adjacentBlock instanceof InventoryHolder) {
                     Inventory i = ((InventoryHolder) adjacentBlock.getState()).getInventory();
-                    if (i.containsAtLeast(new ItemStack(Config.TurretAmmo), 1)) {
+                    if (i.containsAtLeast(Config.TurretAmmo, 1)) {
                         i.remove(Config.TurretAmmo);
                         return true;
                     }
