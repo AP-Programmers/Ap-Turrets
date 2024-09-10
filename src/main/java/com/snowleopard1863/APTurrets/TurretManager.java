@@ -74,8 +74,8 @@ public class TurretManager {
         player.teleport(signPos);
 
         // Effects to add zoom and lock a player from jumping
-        player.addPotionEffect(new PotionEffect(PotionEffectType.SLOW, 1000000, 6));
-        player.addPotionEffect(new PotionEffect(PotionEffectType.JUMP, 1000000, 200));
+        player.addPotionEffect(new PotionEffect(PotionEffectType.SLOWNESS, 1000000, 6));
+        player.addPotionEffect(new PotionEffect(PotionEffectType.JUMP_BOOST, 1000000, 200));
     }
 
     public void demount(Player player, @Nullable Location signPos) {
@@ -90,8 +90,8 @@ public class TurretManager {
         }
 
         // Remove potion effects and set their walking speed back to normal
-        player.removePotionEffect(PotionEffectType.JUMP);
-        player.removePotionEffect(PotionEffectType.SLOW);
+        player.removePotionEffect(PotionEffectType.JUMP_BOOST);
+        player.removePotionEffect(PotionEffectType.SLOWNESS);
     }
 
     public void fire(Player player) {
@@ -115,7 +115,7 @@ public class TurretManager {
         if (runRaycast(player))
             return;
 
-        Arrow arrow = launchArrow(player);
+        Arrow arrow = launchArrow(player, Config.TurretAmmo); // TODO: Support tags
         arrow.setCritical(true);
 
         World world = player.getWorld();
@@ -124,12 +124,12 @@ public class TurretManager {
     }
 
     @NotNull
-    private Arrow launchArrow(Player player) {
+    private Arrow launchArrow(Player player, ItemStack item) {
         Arrow arrow;
         try {
             ServerPlayer nmsPlayer = (ServerPlayer) player.getClass().getMethod("getHandle").invoke(player);
-            ServerLevel nmsWorld = nmsPlayer.getLevel();
-            net.minecraft.world.entity.projectile.Arrow nmsArrow = new net.minecraft.world.entity.projectile.Arrow(nmsWorld, nmsPlayer);
+            ServerLevel nmsWorld = nmsPlayer.serverLevel();
+            net.minecraft.world.entity.projectile.Arrow nmsArrow = new net.minecraft.world.entity.projectile.Arrow(nmsWorld, nmsPlayer, (net.minecraft.world.item.ItemStack) item.getClass().getMethod("getHandle").invoke(item));
             nmsArrow.setNoGravity(true);
             nmsWorld.addFreshEntity(nmsArrow);
             arrow = (Arrow) nmsArrow.getBukkitEntity();
@@ -140,7 +140,6 @@ public class TurretManager {
         arrow.setShooter(player);
         Location offset = player.getLocation().add(player.getLocation().getDirection().multiply(4));
         arrow.setVelocity(offset.getDirection().multiply(Config.ArrowVelocity));
-        arrow.setBounce(false);
         arrow.setMetadata("isTurretBullet", new FixedMetadataValue(TurretsMain.getInstance(), true));
         arrow.setKnockbackStrength(Config.KnockbackStrength);
         double rand = Math.random();
@@ -157,7 +156,7 @@ public class TurretManager {
                 Block adjacentBlock = getBlockSignAttachedTo(signBlock);
                 if (adjacentBlock instanceof InventoryHolder) {
                     Inventory i = ((InventoryHolder) adjacentBlock.getState()).getInventory();
-                    if (i.containsAtLeast(new ItemStack(Config.TurretAmmo), 1)) {
+                    if (i.containsAtLeast(Config.TurretAmmo, 1)) {
                         i.remove(Config.TurretAmmo);
                         return true;
                     }
