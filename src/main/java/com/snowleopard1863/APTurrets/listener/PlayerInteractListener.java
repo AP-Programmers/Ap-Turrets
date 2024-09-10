@@ -17,7 +17,7 @@ import org.bukkit.event.player.PlayerInteractEvent;
 import org.jetbrains.annotations.NotNull;
 
 public class PlayerInteractListener implements Listener {
-    @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = false)
+    @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = true)
     public void onClick(@NotNull PlayerInteractEvent event) {
         event.setCancelled(switch (event.getAction()) {
             case RIGHT_CLICK_AIR -> rightClick(event);

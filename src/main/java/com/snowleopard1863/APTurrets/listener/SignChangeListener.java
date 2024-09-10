@@ -9,10 +9,11 @@ import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
 import org.bukkit.event.block.SignChangeEvent;
+import org.jetbrains.annotations.NotNull;
 
 public class SignChangeListener implements Listener {
     @EventHandler
-    public void eventSignChanged(SignChangeEvent event) {
+    public void eventSignChanged(@NotNull SignChangeEvent event) {
         if (!ChatColor.stripColor(event.getLine(0)).equalsIgnoreCase("Mounted")
                 || !ChatColor.stripColor(event.getLine(1)).equalsIgnoreCase("Gun"))
             return;
