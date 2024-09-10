@@ -18,38 +18,28 @@ import org.jetbrains.annotations.NotNull;
 
 public class PlayerInteractListener implements Listener {
     @EventHandler(priority = EventPriority.NORMAL, ignoreCancelled = false)
-    public void onClick(PlayerInteractEvent event) {
-        switch (event.getAction()) {
-            case RIGHT_CLICK_AIR:
-                rightClick(event);
-                break;
-            case RIGHT_CLICK_BLOCK:
-                rightClickBlock(event);
-                break;
-            case LEFT_CLICK_BLOCK:
-                leftClickBlock(event);
-                break;
-            case LEFT_CLICK_AIR:
-            case PHYSICAL:
-            default:
-                break;
-        }
+    public void onClick(@NotNull PlayerInteractEvent event) {
+        event.setCancelled(switch (event.getAction()) {
+            case RIGHT_CLICK_AIR -> rightClick(event);
+            case RIGHT_CLICK_BLOCK -> rightClickBlock(event);
+            case LEFT_CLICK_BLOCK -> leftClickBlock(event);
+            default -> false;
+        });
     }
 
-    private void leftClickBlock(@NotNull PlayerInteractEvent event) {
-        if (event.getPlayer().getInventory().getItemInMainHand().getType() != Material.STONE_BUTTON)
-            return;
-
+    private boolean leftClickBlock(@NotNull PlayerInteractEvent event) {
         Material type = event.getClickedBlock().getType();
-        if(!Tag.SIGNS.isTagged(type))
-            return;
+        if (!Tag.SIGNS.isTagged(type))
+            return false;
 
         Sign sign = (Sign) event.getClickedBlock().getState();
         if (!sign.getLine(0).equalsIgnoreCase("Mounted") || !sign.getLine(1).equalsIgnoreCase("Gun"))
-            return;
-    
-        // If a player left clicks the mounted gun with a stone button in hand,
-        //  show them the statistics for the plugin (Damage, Knockback, Velocity, etc.)
+            return false;
+
+        if (event.getPlayer().getInventory().getItemInMainHand().getType() != Material.STONE_BUTTON)
+            return true;
+
+        // If a player left-clicks the mounted gun with a stone button in hand, show them the statistics for the plugin (Damage, Knockback, Velocity, etc.)
         event.getPlayer().sendMessage("\n"
                 + ChatColor.GOLD + "Damage/Shot: " + ChatColor.GRAY + Config.Damage + "\n"
                 + ChatColor.GOLD + "Delay Between Shots: " + ChatColor.GRAY + Config.DelayBetweenShots + "\n"
@@ -57,48 +47,48 @@ public class PlayerInteractListener implements Listener {
                 + ChatColor.GOLD + "Fire Chance: " + ChatColor.GRAY + Config.IncindiaryChance * 100.0D + "%\n"
                 + ChatColor.GOLD + "Knockback: " + ChatColor.GRAY + Config.KnockbackStrength + "\n"
                 + ChatColor.GOLD + "Cost to Place: $" + ChatColor.GRAY + Config.CostToPlace);
-        event.setCancelled(true);
+        return true;
     }
 
-    private void rightClickBlock(@NotNull PlayerInteractEvent event) {
+    private boolean rightClickBlock(@NotNull PlayerInteractEvent event) {
         Material type = event.getClickedBlock().getType();
-        if(!Tag.SIGNS.isTagged(type))
-            return;
+        if (!Tag.SIGNS.isTagged(type))
+            return false;
 
         Sign sign = (Sign) event.getClickedBlock().getState();
         if (!sign.getLine(0).equalsIgnoreCase("Mounted") || !sign.getLine(1).equalsIgnoreCase("Gun"))
-            return;
+            return false;
 
         if (event.getClickedBlock().getRelative(BlockFace.DOWN).getType() == Material.SLIME_BLOCK)
-            return;
+            return true;
 
         Location signPos = event.getClickedBlock().getLocation();
         signPos.setPitch(event.getPlayer().getLocation().getPitch());
         signPos.setDirection(event.getPlayer().getVelocity());
         TurretsMain.getInstance().getTurretManager().mount(event.getPlayer(), signPos);
+        return true;
     }
 
-    private void rightClick(PlayerInteractEvent event) {
+    private boolean rightClick(@NotNull PlayerInteractEvent event) {
         Player player = event.getPlayer();
         if (!TurretsMain.getInstance().getTurretManager().isOnTurret(player) || !player.hasPermission("ap-turrets.use"))
-            return;
+            return false;
 
         if (player.getInventory().getItemInMainHand().getType() == Material.MILK_BUCKET
                 || player.getInventory().getItemInOffHand().getType() == Material.MILK_BUCKET) {
             // If the player tries to use milk to clear the effects, cancel the event to keep that from happening
-            event.setCancelled(true);
-            return;
+            return true;
         }
 
         if (player.getInventory().getItemInMainHand().getType() != Material.STONE_BUTTON
                 && player.getInventory().getItemInOffHand().getType() != Material.STONE_BUTTON)
-            return;
+            return false;
 
         if (TurretsMain.getInstance().getTurretManager().isReloading(player))
-            return;
+            return false;
 
         // Fires the turret and keeps them from interacting with something else and placing the button accidentally
         TurretsMain.getInstance().getTurretManager().fire(player);
-        event.setCancelled(true);
+        return true;
     }
 }
