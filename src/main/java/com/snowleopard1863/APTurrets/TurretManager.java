@@ -124,28 +124,16 @@ public class TurretManager {
     }
 
     @NotNull
-    private Arrow launchArrow(Player player, ItemStack item) {
-        Arrow arrow;
-        try {
-            ServerPlayer nmsPlayer = (ServerPlayer) player.getClass().getMethod("getHandle").invoke(player);
-            ServerLevel nmsWorld = nmsPlayer.serverLevel();
-            net.minecraft.world.entity.projectile.Arrow nmsArrow = new net.minecraft.world.entity.projectile.Arrow(nmsWorld, nmsPlayer, (net.minecraft.world.item.ItemStack) item.getClass().getMethod("getHandle").invoke(item));
-            nmsArrow.setNoGravity(true);
-            nmsWorld.addFreshEntity(nmsArrow);
-            arrow = (Arrow) nmsArrow.getBukkitEntity();
-        } catch (Exception e) {
-            throw new ArrowLaunchException("Something went wrong when trying to launch an arrow", e);
-        }
-
+    private Arrow launchArrow(@NotNull Player player, ItemStack item) {
+        Arrow arrow = player.launchProjectile(Arrow.class);
         arrow.setShooter(player);
+        arrow.setGravity(false);
         Location offset = player.getLocation().add(player.getLocation().getDirection().multiply(4));
         arrow.setVelocity(offset.getDirection().multiply(Config.ArrowVelocity));
         arrow.setMetadata("isTurretBullet", new FixedMetadataValue(TurretsMain.getInstance(), true));
         arrow.setKnockbackStrength(Config.KnockbackStrength);
-        double rand = Math.random();
-        if (rand <= Config.IncindiaryChance)
+        if (Math.random() <= Config.IncindiaryChance)
             arrow.setFireTicks(500);
-
         return arrow;
     }
 
