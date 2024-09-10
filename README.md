@@ -1,7 +1,7 @@
 # AP-Turrets
 Mounted Guns! 
 
-**Built and tested in Java 17 on Paper 1.18.2 with Movecraft 8.x**
+**Built and tested in Java 21 on Paper 1.20.6 with Movecraft 8.x**
 
 Dev builds are provided with no claim to functionality at the [GitHub actions page](https://github.com/APDevTeam/Ap-Turrets/actions).
 
