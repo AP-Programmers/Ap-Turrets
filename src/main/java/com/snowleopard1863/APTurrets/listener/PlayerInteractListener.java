@@ -19,12 +19,13 @@ import org.jetbrains.annotations.NotNull;
 public class PlayerInteractListener implements Listener {
     @EventHandler(priority = EventPriority.NORMAL)
     public void onClick(@NotNull PlayerInteractEvent event) {
-        event.setCancelled(switch (event.getAction()) {
+        if(switch (event.getAction()) {
             case RIGHT_CLICK_AIR -> rightClick(event);
             case RIGHT_CLICK_BLOCK -> rightClickBlock(event);
             case LEFT_CLICK_BLOCK -> leftClickBlock(event);
             default -> false;
-        });
+        })
+            event.setCancelled(true); //don't un-cancel events
     }
 
     private boolean leftClickBlock(@NotNull PlayerInteractEvent event) {
